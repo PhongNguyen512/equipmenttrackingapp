@@ -16,7 +16,7 @@ class EquipmentSeeder extends Seeder
 
 
         for($i = 0; $i < 10; $i++){
-            DB::table('equipment')->insert([
+            DB::table('equipments')->insert([
                 'unit' => 'AT'.($i+110),
                 'description' => 'SMT-'.($i+1),
                 'ltd_smu' => rand(15236, 1547985),

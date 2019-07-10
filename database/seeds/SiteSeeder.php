@@ -11,27 +11,27 @@ class SiteSeeder extends Seeder
      */
     public function run()
     {
-        DB::table('site')->insert([
+        DB::table('sites')->insert([
             'site_name' => 'SUPERCORE',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
-        DB::table('site')->insert([
+        DB::table('sites')->insert([
             'site_name' => 'AURORA',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
-        DB::table('site')->insert([
+        DB::table('sites')->insert([
             'site_name' => 'KEARL',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
-        DB::table('site')->insert([
+        DB::table('sites')->insert([
             'site_name' => 'SUNCOR',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
-        DB::table('site')->insert([
+        DB::table('sites')->insert([
             'site_name' => 'LOWLAND',
             'created_at' => now(),
             'updated_at' => now(),

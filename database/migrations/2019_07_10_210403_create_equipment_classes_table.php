@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateSiteTable extends Migration
+class CreateEquipmentClassesTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,10 +13,10 @@ class CreateSiteTable extends Migration
      */
     public function up()
     {
-        Schema::create('site', function (Blueprint $table) {
+        Schema::create('equipment_classes', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('site_name');
-            $table->string('location_detail')->nullable();
+            $table->string('billing_rate');
+            $table->string('equipment_class_name')->unique();
             $table->timestamps();
         });
     }
@@ -28,6 +28,6 @@ class CreateSiteTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('site');
+        Schema::dropIfExists('equipment_class');
     }
 }
