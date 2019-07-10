@@ -9,4 +9,7 @@ class EquipmentClass extends Model
     protected $fillable= [
         'billing_rate', 'equipment_class_name'
     ];
+    public function EquipmentList(){
+        return $this->hasMany(Equipment::class);
+    }
 }
