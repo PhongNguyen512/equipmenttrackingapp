@@ -28,3 +28,7 @@ Route::get('/allEquipClasses','ApiGetController@allEquipClass');
 
 //eta.test/api/allEquip
 Route::get('/allEquip','ApiGetController@allEquip');
+
+///////////////////////////////////////////////////////////////////
+//eta.test/api/newSite
+Route::post('/newSite','ApiPostController@newSite');
