@@ -63,5 +63,65 @@ class ApiGetController extends Controller
 
         return $returnData;
     }
+
+    /////////
+    // All sites
+    ////////
+    public function allSites(){
+        $sites = Site::all();
+        $finalData = [];
+
+        foreach($sites as $site){
+            $object = new \stdClass();
+            $object->id = $site->id;
+            $object->site_name = $site->site_name;
+
+            array_push($finalData, $object);
+        }
+
+        return response()->json($finalData);
+    }
+
+    /////////
+    // All equipment classes
+    ////////
+    public function allEquipClass(){
+        $equipClasses = EquipmentClass::all();
+        $finalData = [];
+
+        foreach($equipClasses as $equipClass){
+            $object = new \stdClass();
+            $object->id = $equipClass->id;
+            $object->billing_rate = $equipClass->billing_rate;
+            $object->equipment_class_name = $equipClass->equipment_class_name;
+
+            array_push($finalData, $object);
+        }
+
+        return response()->json($finalData);
+    }
+
+    /////////
+    // All equipment 
+    ////////
+    public function allEquip(){
+        $equipments = Equipment::all();
+        $finalData = [];
+
+        foreach($equipments as $equip){
+            $object = new \stdClass();
+            $object->id = $equip->id;
+            $object->unit = $equip->unit;
+            $object->description = $equip->description;
+            $object->ltd_smu = $equip->ltd_smu;
+            $object->owning_status = $equip->owning_status;
+            $object->equipment_status = $equip->equipment_status;
+            $object->machanical_status = $equip->machanical_status;
+
+            array_push($finalData, $object);
+        }
+
+        return response()->json($finalData);
+    }
     
 }

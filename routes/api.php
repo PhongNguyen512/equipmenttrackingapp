@@ -22,3 +22,9 @@ Route::get('/allData','ApiGetController@allData');
 
 //eta.test/api/allSites
 Route::get('/allSites','ApiGetController@allSites');
+
+//eta.test/api/allEquipClasses
+Route::get('/allEquipClasses','ApiGetController@allEquipClass');
+
+//eta.test/api/allEquip
+Route::get('/allEquip','ApiGetController@allEquip');
