@@ -15,6 +15,7 @@ class EquipmentClassSeeder extends Seeder
             DB::table('equipment_classes')->insert([
                 'billing_rate' => 'B0'.$i,
                 'equipment_class_name' => 'Articulating Trucks - '.($i*10).'T',
+                'site_id' => rand(1, 5),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

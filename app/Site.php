@@ -9,7 +9,7 @@ class Site extends Model
     protected $fillable= [
         'site_name', 'location_detail'
     ];
-    public function EquipmentList(){
-        return $this->hasMany(Equipment::class);
+    public function EquipmentClassList(){
+        return $this->hasMany(EquipmentClass::class);
     }
 }

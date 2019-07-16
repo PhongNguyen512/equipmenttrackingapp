@@ -14,10 +14,8 @@ class UpdateEquipmentsTable extends Migration
     public function up()
     {
         Schema::table('equipments', function (Blueprint $table) {
-            $table->bigInteger('equipment_category_id')->unsigned();
-            $table->bigInteger('site_id')->unsigned();            
-            $table->foreign('equipment_category_id')->references('id')->on('equipment_classes');  
-            $table->foreign('site_id')->references('id')->on('sites'); 
+            $table->bigInteger('equipment_class_id')->unsigned(); 
+            $table->foreign('equipment_class_id')->references('id')->on('equipment_classes');  
         });
     }
 
@@ -31,8 +29,6 @@ class UpdateEquipmentsTable extends Migration
         Schema::table('equipments', function (Blueprint $table) {
             $table->dropForeign('equipment_equipment_category_id_foreign');
             $table->dropColumn('equipment_category_id');
-            $table->dropForeign('equipment_site_id_foreign');
-            $table->dropColumn('site_id');
         });
     }
 }

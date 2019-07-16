@@ -14,8 +14,5 @@ class Equipment extends Model
     {
         return $this->belongsTo(EquipmentClass::class, 'equipment_category_id');
     }
-    public function SiteList()
-    {
-        return $this->belongsTo(Site::class, 'site_id');
-    }
+    
 }

@@ -23,8 +23,7 @@ class EquipmentSeeder extends Seeder
                 'owning_status' => Arr::random(['OWN', 'RENT']),
                 'equipment_status' => Arr::random(['AV', 'DM']),
                 'mechanical_status' => Arr::random(['Tailgate', '', '', 'Proheat', 'Bed liner', '', 'On Holde', '']),
-                'equipment_category_id' => rand(1, 5),
-                'site_id' => rand(1, 5),
+                'equipment_class_id' => rand(1, 5),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

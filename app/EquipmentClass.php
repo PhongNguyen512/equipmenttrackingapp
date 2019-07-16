@@ -12,4 +12,8 @@ class EquipmentClass extends Model
     public function EquipmentList(){
         return $this->hasMany(Equipment::class);
     }
+    public function SiteList()
+    {
+        return $this->belongsTo(Site::class, 'site_id');
+    }
 }

@@ -16,3 +16,9 @@ use Illuminate\Http\Request;
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+//eta.test/api/allData
+Route::get('/allData', 'ApiController@allData');
+
+//eta.test/api/allSites
+Route::get('/allSites', 'ApiController@allSites');
