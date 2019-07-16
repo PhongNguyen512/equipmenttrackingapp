@@ -18,7 +18,7 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 });
 
 //eta.test/api/allData
-Route::get('/allData', 'ApiController@allData');
+Route::get('/allData','ApiGetController@allData');
 
 //eta.test/api/allSites
-Route::get('/allSites', 'ApiController@allSites');
+Route::get('/allSites','ApiGetController@allSites');
