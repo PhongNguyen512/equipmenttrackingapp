@@ -39,3 +39,12 @@ Route::post('/newEquipmentClass','ApiPostController@newEquipmentClass');
 //eta.test/api/newEquip
 Route::post('/newEquip','ApiPostController@newEquip');
 
+///////////////////////////////////////////////////////////////////
+//eta.test/api/updateSite/8
+Route::post('/updateSite/{site}','ApiPostController@updateSite');
+
+//eta.test/api/updateEquipmentClass/3
+Route::post('/updateEquipmentClass/{equipClass}','ApiPostController@updateEquipmentClass');
+
+//eta.test/api/updateEquip/10
+Route::post('/updateEquip/{equip}','ApiPostController@updateEquip');
