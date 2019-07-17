@@ -32,3 +32,10 @@ Route::get('/allEquip','ApiGetController@allEquip');
 ///////////////////////////////////////////////////////////////////
 //eta.test/api/newSite
 Route::post('/newSite','ApiPostController@newSite');
+
+//eta.test/api/newEquipmentClass
+Route::post('/newEquipmentClass','ApiPostController@newEquipmentClass');
+
+//eta.test/api/newEquip
+Route::post('/newEquip','ApiPostController@newEquip');
+

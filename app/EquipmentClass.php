@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class EquipmentClass extends Model
 {
     protected $fillable= [
-        'billing_rate', 'equipment_class_name'
+        'billing_rate', 'equipment_class_name', 'site_id',
     ];
     public function EquipmentList(){
         return $this->hasMany(Equipment::class);
