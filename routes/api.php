@@ -49,4 +49,13 @@ Route::group(['middleware' => 'cors'], function(){
 
     //eta.test/api/updateEquip/10
     Route::post('/updateEquip/{equip}','ApiPostController@updateEquip');
+
+    //eta.test/api/deleteSite/11
+    Route::delete('/deleteSite/{site}', 'ApiPostController@deleteSite');
+
+    //eta.test/api/deleteEquipmentClass/7
+    Route::delete('/deleteEquipmentClass/{equipClass}', 'ApiPostController@deleteEquipmentClass');
+
+    //eta.test/api/deleteEquip/8
+    Route::delete('/deleteEquip/{equip}', 'ApiPostController@deleteEquip');
 });

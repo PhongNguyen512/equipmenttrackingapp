@@ -188,7 +188,7 @@ class ApiPostController extends Controller
                 $request->equipment_status = filter_var($request->equipment_status, FILTER_VALIDATE_BOOLEAN);
             }
         }
-        
+
         //if POST data is nothing
         if( count($request->all()) == 0 ){
             return response()->json([
@@ -235,4 +235,41 @@ class ApiPostController extends Controller
             'new data' => $equip,
         ]);
     }
+
+    public function deleteSite(Site $site){
+        if( count($site->EquipmentClassList) > 0 ){
+            return response()->json([
+                'error' => 'You can\'t delete at this moment. ',
+            ]);
+        }
+
+        $site->delete();
+
+        return response()->json([
+            'success' => 'A Site has been deleted',
+        ]);
+    }
+
+    public function deleteEquipmentClass(EquipmentClass $equipClass){
+        if( count($equipClass->EquipmentList) > 0 ){
+            return response()->json([
+                'error' => 'You can\'t delete at this moment. ',
+            ]);
+        }
+
+        $equipClass->delete();
+
+        return response()->json([
+            'success' => 'An Equipment Class has been deleted',
+        ]);
+    }
+
+    public function deleteEquip(Equipment $equip){
+        $equip->delete();
+
+        return response()->json([
+            'success' => 'An Equipment has been deleted',
+        ]);
+    }
+
 }
