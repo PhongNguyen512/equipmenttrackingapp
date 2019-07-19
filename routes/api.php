@@ -17,34 +17,36 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-//eta.test/api/allData
-Route::get('/allData','ApiGetController@allData');
+Route::group(['middleware' => 'cors'], function(){
+    //eta.test/api/allData
+    Route::get('/allData','ApiGetController@allData');
 
-//eta.test/api/allSites
-Route::get('/allSites','ApiGetController@allSites');
+    //eta.test/api/allSites
+    Route::get('/allSites','ApiGetController@allSites');
 
-//eta.test/api/allEquipClasses
-Route::get('/allEquipClasses','ApiGetController@allEquipClass');
+    //eta.test/api/allEquipClasses
+    Route::get('/allEquipClasses','ApiGetController@allEquipClass');
 
-//eta.test/api/allEquip
-Route::get('/allEquip','ApiGetController@allEquip');
+    //eta.test/api/allEquip
+    Route::get('/allEquip','ApiGetController@allEquip');
 
-///////////////////////////////////////////////////////////////////
-//eta.test/api/newSite
-Route::post('/newSite','ApiPostController@newSite');
+    ///////////////////////////////////////////////////////////////////
+    //eta.test/api/newSite
+    Route::post('/newSite','ApiPostController@newSite');
 
-//eta.test/api/newEquipmentClass
-Route::post('/newEquipmentClass','ApiPostController@newEquipmentClass');
+    //eta.test/api/newEquipmentClass
+    Route::post('/newEquipmentClass','ApiPostController@newEquipmentClass');
 
-//eta.test/api/newEquip
-Route::post('/newEquip','ApiPostController@newEquip');
+    //eta.test/api/newEquip
+    Route::post('/newEquip','ApiPostController@newEquip');
 
-///////////////////////////////////////////////////////////////////
-//eta.test/api/updateSite/8
-Route::post('/updateSite/{site}','ApiPostController@updateSite');
+    ///////////////////////////////////////////////////////////////////
+    //eta.test/api/updateSite/8
+    Route::post('/updateSite/{site}','ApiPostController@updateSite');
 
-//eta.test/api/updateEquipmentClass/3
-Route::post('/updateEquipmentClass/{equipClass}','ApiPostController@updateEquipmentClass');
+    //eta.test/api/updateEquipmentClass/3
+    Route::post('/updateEquipmentClass/{equipClass}','ApiPostController@updateEquipmentClass');
 
-//eta.test/api/updateEquip/10
-Route::post('/updateEquip/{equip}','ApiPostController@updateEquip');
+    //eta.test/api/updateEquip/10
+    Route::post('/updateEquip/{equip}','ApiPostController@updateEquip');
+});
