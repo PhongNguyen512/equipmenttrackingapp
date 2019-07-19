@@ -73,6 +73,16 @@ class ApiPostController extends Controller
     // require => unit, ltd_smu, equipment_class_id
     ///////////
     public function newEquip(Request $request){
+
+        //This is for TESTING ONLY. Postman can't POST data with boolean. The following code is for convert string -> boolean
+        if($request->equipment_status !== null){
+            if($request->equipment_status === 'false' ){
+                $request->equipment_status = filter_var($request->equipment_status, FILTER_VALIDATE_BOOLEAN);
+            }else{
+                $request->equipment_status = filter_var($request->equipment_status, FILTER_VALIDATE_BOOLEAN);
+            }
+        }
+        
         //validate input value
         $validator = Validator::make($request->all(), [
             'unit' => ['required', 'min:3', 'unique:equipments'],
@@ -91,7 +101,9 @@ class ApiPostController extends Controller
             'description' => $request->description !== null ? $request->description : '',
             'ltd_smu' => $request->ltd_smu,
             'owning_status' => $request->owning_status !== null ? $request->owning_status : 'RENT',
-            'equipment_status' => $request->equipment_status !== null ? $request->equipment_status : 'AV',
+            'equipment_status' => $request->equipment_status !== null ? 
+                                    $request->equipment_status === true ? 'AV' : 'DM'
+                                    : 'AV',
             'mechanical_status' => $request->mechanical_status !== null ? $request->mechanical_status : '',
             'equipment_class_id' => $request->equipment_class_id,
         ]);
@@ -168,6 +180,15 @@ class ApiPostController extends Controller
     }
 
     public function updateEquip(Request $request, Equipment $equip){
+        //This is for TESTING ONLY. Postman can't POST data with boolean. The following code is for convert string -> boolean
+        if($request->equipment_status !== null){
+            if($request->equipment_status === 'false' ){
+                $request->equipment_status = filter_var($request->equipment_status, FILTER_VALIDATE_BOOLEAN);
+            }else{
+                $request->equipment_status = filter_var($request->equipment_status, FILTER_VALIDATE_BOOLEAN);
+            }
+        }
+        
         //if POST data is nothing
         if( count($request->all()) == 0 ){
             return response()->json([
@@ -199,7 +220,11 @@ class ApiPostController extends Controller
         $equip->description = $request->description !== null ? $request->description : $equip->description;
         $equip->ltd_smu = $request->ltd_smu !== null ? $request->ltd_smu : $equip->ltd_smu;
         $equip->owning_status = $request->owning_status !== null ? $request->owning_status : $equip->owning_status;
-        $equip->equipment_status = $request->equipment_status !== null ? $request->equipment_status : $equip->equipment_status;
+
+        $equip->equipment_status = $request->equipment_status !== null ? 
+                                    $request->equipment_status === true ? 'AV' : 'DM'
+                                    : $equip->equipment_status;
+
         $equip->mechanical_status = $request->mechanical_status !== null ? $request->mechanical_status : $equip->mechanical_status;
 
         $equip->save();

@@ -55,7 +55,12 @@ class ApiGetController extends Controller
             $object->description = $d->description;
             $object->ltd_smu = $d->ltd_smu;
             $object->owning_status = $d->owning_status;
-            $object->equipment_status = $d->equipment_status;
+
+            if($d->equipment_status === 'AV')
+                $object->equipment_status = true;
+            else
+                $object->equipment_status = false;
+
             $object->mechanical_status = $d->mechanical_status;
 
             array_push($returnData, $object);
@@ -115,7 +120,12 @@ class ApiGetController extends Controller
             $object->description = $equip->description;
             $object->ltd_smu = $equip->ltd_smu;
             $object->owning_status = $equip->owning_status;
-            $object->equipment_status = $equip->equipment_status;
+
+            if($equip->equipment_status === 'AV')
+                $object->equipment_status = true;
+            else
+                $object->equipment_status = false;
+
             $object->machanical_status = $equip->machanical_status;
 
             array_push($finalData, $object);
