@@ -181,33 +181,42 @@ class ApiPostController extends Controller
 
     public function updateEquip(Request $request, Equipment $equip){
         
-        return response()->json([
-            'data' => json_decode($request->getContent(), true),
-        ]);
+        // return response()->json([
+        //     'data' => json_decode($request->getContent(), true),
+        // ]);
 
-        //This is for TESTING ONLY. Postman can't POST data with boolean. The following code is for convert string -> boolean
-        if($request->equipment_status !== null){
-            if($request->equipment_status === 'false' ){
-                $request->equipment_status = filter_var($request->equipment_status, FILTER_VALIDATE_BOOLEAN);
-            }else{
-                $request->equipment_status = filter_var($request->equipment_status, FILTER_VALIDATE_BOOLEAN);
-            }
-        }
+        $data = json_decode($request->getContent(), true);
 
         //if POST data is nothing
-        if( count($request->all()) == 0 ){
+        if( count($data) == 0 ){
             return response()->json([
                 'error' => 'Updating data not found',
             ]);
         }
 
+        $data = (object)$data;
+
+        //This is for TESTING ONLY. Postman can't POST data with boolean. The following code is for convert string -> boolean
+        if($data->equipment_status !== null){
+            if($data->equipment_status === 'false' ){
+                $data->equipment_status = filter_var($data->equipment_status, FILTER_VALIDATE_BOOLEAN);
+            }else{
+                $data->equipment_status = filter_var($data->equipment_status, FILTER_VALIDATE_BOOLEAN);
+            }
+        }
+
         //validate input value
-        $validator = Validator::make($request->all(), [
+        // $validator = Validator::make($data, [
+        //     'unit' => ['min:3', Rule::unique('equipments', 'unit')->ignore($equip->id) ],
+        //     'ltd_smu' => ['numeric'],
+        // ]);
+
+        $validator = Validator::make((array)$data, [
             'unit' => ['min:3', Rule::unique('equipments', 'unit')->ignore($equip->id) ],
             'ltd_smu' => ['numeric'],
         ]);
 
-        if($request->ltd_smu < $equip->ltd_smu){
+        if($data->ltd_smu < $equip->ltd_smu){
             return response()->json([
                 'error' => "SMU is invalid. Please contact coordinator or admin.",
             ]);
@@ -221,16 +230,17 @@ class ApiPostController extends Controller
 
         $oldData = Equipment::find($equip->id);
 
-        $equip->unit = $request->unit !== null ? $request->unit : $equip->unit;
-        $equip->description = $request->description !== null ? $request->description : $equip->description;
-        $equip->ltd_smu = $request->ltd_smu !== null ? $request->ltd_smu : $equip->ltd_smu;
-        $equip->owning_status = $request->owning_status !== null ? $request->owning_status : $equip->owning_status;
+        $equip->unit = isset($data->unit) ? $data->unit : $equip->unit;
+        $equip->description = isset($data->description) ? $data->description : $equip->description;
+        $equip->ltd_smu = isset($data->ltd_smu) ? $data->ltd_smu : $equip->ltd_smu;
+        $equip->owning_status = isset($data->owning_status) ? $data->owning_status : $equip->owning_status;
 
-        $equip->equipment_status = $request->equipment_status !== null ? 
-                                    $request->equipment_status === true ? 'AV' : 'DM'
+        $equip->equipment_status = isset($data->equipment_status) ? 
+                                    $data->equipment_status === true ? 'AV' : 'DM'
                                     : $equip->equipment_status;
 
-        $equip->mechanical_status = $request->mechanical_status !== null ? $request->mechanical_status : $equip->mechanical_status;
+        // $equip->mechanical_status = $data->mechanical_status !== null ? $data->mechanical_status : $equip->mechanical_status;
+        $equip->mechanical_status = isset($data->mechanical_status) ? $data->mechanical_status : $equip->mechanical_status;
 
         $equip->save();
 
