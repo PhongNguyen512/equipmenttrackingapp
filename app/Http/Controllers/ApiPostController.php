@@ -191,7 +191,7 @@ class ApiPostController extends Controller
         if( count($data) == 0 ){
             return response()->json([
                 'error' => 'Updating data not found',
-            ]);
+            ])->setStatusCode(400);
         }
 
         $data = (object)$data;
@@ -219,13 +219,13 @@ class ApiPostController extends Controller
         if($data->ltd_smu < $equip->ltd_smu){
             return response()->json([
                 'error' => "SMU is invalid. Please contact coordinator or admin.",
-            ]);
+            ])->setStatusCode(400);
         }
 
         if($validator->fails()){
             return response()->json([
                 'error' => $validator->messages()->first(),
-            ]);
+            ])->setStatusCode(400);
         }
 
         $oldData = Equipment::find($equip->id);
