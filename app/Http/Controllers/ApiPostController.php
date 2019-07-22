@@ -180,7 +180,7 @@ class ApiPostController extends Controller
     }
 
     public function updateEquip(Request $request, Equipment $equip){
-        
+        echo("start of update");
         // return response()->json([
         //     'data' => json_decode($request->getContent(), true),
         // ]);
@@ -244,6 +244,7 @@ class ApiPostController extends Controller
 
         $equip->save();
 
+        echo("end of update equip");
         return response()->json([
             'success' => 'An equipment has been update',
             'old data' => $oldData,
@@ -255,7 +256,7 @@ class ApiPostController extends Controller
         if( count($site->EquipmentClassList) > 0 ){
             return response()->json([
                 'error' => 'You can\'t delete at this moment. ',
-            ]);
+            ], 400);
         }
 
         $site->delete();
@@ -269,7 +270,7 @@ class ApiPostController extends Controller
         if( count($equipClass->EquipmentList) > 0 ){
             return response()->json([
                 'error' => 'You can\'t delete at this moment. ',
-            ]);
+            ], 400);
         }
 
         $equipClass->delete();
