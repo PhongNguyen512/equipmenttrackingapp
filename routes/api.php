@@ -58,4 +58,27 @@ Route::group(['middleware' => 'cors'], function(){
 
     //eta.test/api/deleteEquip/8
     Route::delete('/deleteEquip/{equip}', 'ApiPostController@deleteEquip');
+
+    //////////////////////////////////////
+    // Authentication
+    Route::group([
+        'prefix' => 'auth'
+    ], function () {
+        //eta.test/api/auth/login
+        Route::post('login', 'AuthController@login');
+      
+        Route::group([
+          'middleware' => 'auth:api'
+        ], function() {
+            //eta.test/api/auth/logout
+            Route::get('logout', 'AuthController@logout');
+
+            //eta.test/api/auth/user
+            Route::get('user', 'AuthController@user');
+
+            //eta.test/api/auth/currentUser
+            Route::get('currentUser', 'AuthController@currentUser');
+
+        });
+    });
 });

@@ -180,7 +180,7 @@ class ApiPostController extends Controller
     }
 
     public function updateEquip(Request $request, Equipment $equip){
-        echo("start of update");
+        
         // return response()->json([
         //     'data' => json_decode($request->getContent(), true),
         // ]);
@@ -244,7 +244,6 @@ class ApiPostController extends Controller
 
         $equip->save();
 
-        echo("end of update equip");
         return response()->json([
             'success' => 'An equipment has been update',
             'old data' => $oldData,
