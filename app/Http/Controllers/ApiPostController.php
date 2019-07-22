@@ -180,6 +180,11 @@ class ApiPostController extends Controller
     }
 
     public function updateEquip(Request $request, Equipment $equip){
+        
+        return response()->json([
+            'data' => json_decode($request->getContent(), true),
+        ]);
+
         //This is for TESTING ONLY. Postman can't POST data with boolean. The following code is for convert string -> boolean
         if($request->equipment_status !== null){
             if($request->equipment_status === 'false' ){
