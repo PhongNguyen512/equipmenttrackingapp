@@ -17,7 +17,7 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::group(['middleware' => 'cors'], function(){
+Route::group(['middleware' => 'cors', 'middleware' => 'auth:api'], function(){
     //eta.test/api/allData
     Route::get('/allData','ApiGetController@allData');
 
@@ -59,26 +59,30 @@ Route::group(['middleware' => 'cors'], function(){
     //eta.test/api/deleteEquip/8
     Route::delete('/deleteEquip/{equip}', 'ApiPostController@deleteEquip');
 
-    //////////////////////////////////////
-    // Authentication
+   
+});
+
+//////////////////////////////////////
+// Authentication
+Route::group([
+    'prefix' => 'auth',
+    'middleware' => 'cors'
+], function () {
+    //eta.test/api/auth/login
+    Route::post('login', 'AuthController@login')->name('login');
+
+    //eta.test/api/auth/refreshToken
+    Route::post('refreshToken', 'AuthController@refreshToken');
+    
     Route::group([
-        'prefix' => 'auth'
-    ], function () {
-        //eta.test/api/auth/login
-        Route::post('login', 'AuthController@login');
-      
-        Route::group([
-          'middleware' => 'auth:api'
-        ], function() {
-            //eta.test/api/auth/logout
-            Route::get('logout', 'AuthController@logout');
+        'middleware' => 'auth:api'
+    ], function() {
+        //eta.test/api/auth/logout
+        Route::get('logout', 'AuthController@logout');
 
-            //eta.test/api/auth/user
-            Route::get('user', 'AuthController@user');
+        //eta.test/api/auth/user
+        Route::get('user', 'AuthController@user');
 
-            //eta.test/api/auth/currentUser
-            Route::get('currentUser', 'AuthController@currentUser');
 
-        });
     });
 });

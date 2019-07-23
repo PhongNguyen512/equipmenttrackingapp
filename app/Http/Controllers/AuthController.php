@@ -61,7 +61,24 @@ class AuthController extends Controller
         return response()->json($request->user());
     }
 
-    public function currentUser(){
-        dd( \Auth::user() );
+    public function refreshToken(Request $request){
+        if( !isset($request->refresh_token) )
+            return response()->json([
+                'message' => 'Refresh Token not found'
+            ], 400);
+
+        $http = new \GuzzleHttp\Client;
+
+        $response = $http->post(url('/').'/oauth/token', [
+            'form_params' => [
+                'grant_type' => 'refresh_token',
+                'refresh_token' => $request->refresh_token,
+                'client_id' => $this->oauth_client->id,
+                'client_secret' => $this->oauth_client->secret,
+                'scope' => '',
+            ],
+        ]);
+        
+        return json_decode((string) $response->getBody(), true);
     }
 }
