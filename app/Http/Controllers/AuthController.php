@@ -45,7 +45,18 @@ class AuthController extends Controller
             ],
         ]);
 
-        return json_decode((string) $response->getBody(), true);
+        $user = DB::table('users')
+                ->where('email', '=', $request->email)
+                ->first();
+
+        // return json_decode((string) $response->getBody(), true);
+
+        return response()->json([
+            'token' => json_decode((string) $response->getBody(), true),
+            'id' => $user->id,
+            'email' => $user->email,            
+            'name' => $user->name 
+        ]);
     }
 
     public function logout(Request $request)
