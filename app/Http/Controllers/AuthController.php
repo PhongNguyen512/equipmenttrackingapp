@@ -21,7 +21,6 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        // dd( $this->oauth_client );
         $request->validate([
             'email' => 'required|string|email',
             'password' => 'required|string',

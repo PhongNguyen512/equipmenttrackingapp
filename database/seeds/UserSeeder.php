@@ -15,12 +15,28 @@ class UserSeeder extends Seeder
     public function run()
     {
         $faker = Faker::create();
-    	foreach (range(1,10) as $index) {
+
+        DB::table('users')->insert([
+            'name' => $faker->name,
+            'email' => 'admin@abc.com',
+            'user_role_id' => 1,
+            'password' => bcrypt('secret'),
+        ]);
+
+        DB::table('users')->insert([
+            'name' => $faker->name,
+            'email' => 'coordinator@abc.com',
+            'user_role_id' => 2,
+            'password' => bcrypt('secret'),
+        ]);
+        
+    	foreach (range(1,5) as $index) {
 	        DB::table('users')->insert([
 	            'name' => $faker->name,
-	            'email' => $faker->email,
+                'email' => $faker->email,
+                'user_role_id' => 3,
 	            'password' => bcrypt('secret'),
 	        ]);
-	}
+	    }
     }
 }
