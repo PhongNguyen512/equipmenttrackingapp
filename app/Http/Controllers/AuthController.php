@@ -32,6 +32,12 @@ class AuthController extends Controller
                 'message' => 'Unauthorized'
             ], 401);
 
+        $userRole = User::select('id')->where('email', $request->email)->first();
+
+            // echo($userRole);
+
+        // dd( $userRole );
+
         $http = new \GuzzleHttp\Client;
 
         $response = $http->post(url('/').'/oauth/token', [

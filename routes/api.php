@@ -32,7 +32,7 @@ Route::group(['middleware' => 'cors', 'middleware' => 'auth:api'], function(){
 
     ///////////////////////////////////////////////////////////////////
     //eta.test/api/newSite
-    Route::post('/newSite','ApiPostController@newSite');
+    Route::post('/newSite','ApiPostController@newSite')->middleware(['scopes:admin']);
 
     //eta.test/api/newEquipmentClass
     Route::post('/newEquipmentClass','ApiPostController@newEquipmentClass');

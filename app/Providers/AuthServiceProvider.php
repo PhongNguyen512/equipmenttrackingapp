@@ -24,7 +24,7 @@ class AuthServiceProvider extends ServiceProvider
      * @return void
      */
     public function boot()
-    {
+    {cprs
         $this->registerPolicies();
 
         Route::middleware('cors')->group(function() {
@@ -33,7 +33,14 @@ class AuthServiceProvider extends ServiceProvider
         // Passport::routes();
 
 
-        // Passport::tokensExpireIn(now()->addMinutes(1));
+        // Passport::tokensExpireIn(now()->addMinutes(30));
         Passport::tokensExpireIn(now()->addSeconds(10));
+
+        Passport::tokensCan([
+            'admin' => 'Do anything',
+            'coordinator' => 'Limit in some actions',
+            'foremen' => 'Limit alot action'
+        ]);
+
     }
 }
