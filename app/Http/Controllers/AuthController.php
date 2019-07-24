@@ -32,13 +32,24 @@ class AuthController extends Controller
                 'message' => 'Unauthorized'
             ], 401);
 
-        $userRole = User::select('id')->where('email', $request->email)->first();
-
-            // echo($userRole);
-
-        // dd( $userRole );
+        $userRole = User::select('*')->where('email', $request->email)->first()->GetRole()->first()->role;
 
         $http = new \GuzzleHttp\Client;
+
+        switch( strtolower($userRole) ){
+            case 'admin':
+                $scope = 'admin';
+                break;
+            case 'coordinator':
+                $scope = 'coordinator';
+                break;
+            case 'foremen':
+                $scope = 'foremen';
+                break;
+            default:
+                $scope = 'nothing';
+                break;
+        }
 
         $response = $http->post(url('/').'/oauth/token', [
             'form_params' => [
@@ -47,6 +58,7 @@ class AuthController extends Controller
                 'client_secret' => $this->oauth_client->secret,
                 'username' => $request->email,
                 'password' => $request->password,
+                'scope' => $scope
             ],
         ]);
 

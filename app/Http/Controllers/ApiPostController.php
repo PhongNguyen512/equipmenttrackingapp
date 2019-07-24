@@ -244,6 +244,9 @@ class ApiPostController extends Controller
 
         $equip->save();
 
+        // temperary change for app usage
+        $equip->equipment_status = $equip->equipment_status === 'AV' ? true : false;
+
         return response()->json([
             'success' => 'An equipment has been update',
             'old data' => $oldData,
