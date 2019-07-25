@@ -285,38 +285,64 @@ class ApiPostController extends Controller
     }
 
     public function logUpdateEquip($data, $token){
-        $equipmentId = $data->id;
 
-        //Convert the updated time
-        $datetime = new DateTime($data->updated_at);
+        switch($data->equipment_status){
+            case 'AV':
+                $this->logAV();
+                break;
+            case 'DM':
+                $this->logDM();
+                break;
+            default:
+                break;
+        }
 
-        if( $datetime->format('H') >= 18 && $datetime->format('H') <= 7 )
-            $shift = "Day";
-        else
-            $shift = "Night";
 
-        $smu = $data->ltd_smu;
 
-        $unit = $data->unit;
+        // $equipmentId = $data->id;
 
-        $equipClass = $data->EquipmentClassList()->first();
+        // //Convert the updated time
+        // $datetime = new DateTime($data->updated_at);
 
-        $class = $equipClass->billing_rate.' '.$equipClass->equipment_class_name;
+        // if( $datetime->format('H') > 19 && $datetime->format('H') < 7 )
+        //     $shift = "Day";
+        // else
+        //     $shift = "Night";
 
-        $summary = $equipClass->billing_rate;
+        // $smu = $data->ltd_smu;
 
-        $http = new \GuzzleHttp\Client;
+        // $unit = $data->unit;
 
-        $response = json_decode((string) $http->request('GET', url('/').'/api/auth/user', [
-            'headers' => [
-                'Accept' => 'application/json',
-                'Authorization' => $token,
-            ],
-        ])->getBody(), true);
+        // $equipClass = $data->EquipmentClassList()->first();
 
-        
+        // $class = $equipClass->billing_rate.' '.$equipClass->equipment_class_name;
+
+        // $summary = $equipClass->billing_rate;
+
+        // $http = new \GuzzleHttp\Client;
+
+        // $user = json_decode((string) $http->request('GET', url('/').'/api/auth/user', [
+        //     'headers' => [
+        //         'Accept' => 'application/json',
+        //         'Authorization' => $token,
+        //     ],
+        // ])->getBody(), true);
+
+        // //location will be prompt by foremen
+        // // $location = 
+
        
-        dd($response);
+        // dd($data);
         
     }
+
+    public function logDM(){
+
+    }
+
+    public function logAV(){
+        
+    }
+
+
 }
