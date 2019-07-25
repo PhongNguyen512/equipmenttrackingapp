@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Site;
 use App\Equipment;
 use App\EquipmentClass;
+use App\EquipUpdateLog;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use DateTime;
@@ -24,7 +25,7 @@ class ApiPostController extends Controller
         if($validator->fails()){
             return response()->json([
                 'error' => $validator->messages()->first(),
-            ]);
+            ], 401);
         }
 
         Site::create([
@@ -53,7 +54,7 @@ class ApiPostController extends Controller
         if($validator->fails()){
             return response()->json([
                 'error' => $validator->messages()->first(),
-            ]);
+            ], 401);
         }
 
         EquipmentClass::create([
@@ -94,7 +95,7 @@ class ApiPostController extends Controller
         if($validator->fails()){
             return response()->json([
                 'error' => $validator->messages()->first(),
-            ]);
+            ], 401);
         }
 
         Equipment::create([
@@ -122,7 +123,7 @@ class ApiPostController extends Controller
         if( count($request->all()) == 0 ){
             return response()->json([
                 'error' => 'Updating data not found',
-            ]);
+            ], 401);
         }
 
          //validate input value
@@ -133,7 +134,7 @@ class ApiPostController extends Controller
         if($validator->fails()){
             return response()->json([
                 'error' => $validator->messages()->first(),
-            ]);
+            ], 401);
         }
 
         $oldData = Site::find($site->id);
@@ -152,7 +153,7 @@ class ApiPostController extends Controller
         if( count($request->all()) == 0 ){
             return response()->json([
                 'error' => 'Updating data not found',
-            ]);
+            ], 401);
         }
 
         //validate input value
@@ -163,7 +164,7 @@ class ApiPostController extends Controller
         if($validator->fails()){
             return response()->json([
                 'error' => $validator->messages()->first(),
-            ]);
+            ], 401);
         }
 
         $oldData = EquipmentClass::find($equipClass->id);
@@ -194,13 +195,13 @@ class ApiPostController extends Controller
         $data = (object)$data;
 
         //This is for TESTING ONLY. Postman can't POST data with boolean. The following code is for convert string -> boolean
-        // if($data->equipment_status !== null){
-        //     if($data->equipment_status === 'false' ){
-        //         $data->equipment_status = filter_var($data->equipment_status, FILTER_VALIDATE_BOOLEAN);
-        //     }else{
-        //         $data->equipment_status = filter_var($data->equipment_status, FILTER_VALIDATE_BOOLEAN);
-        //     }
-        // }
+        if($data->equipment_status !== null){
+            if($data->equipment_status === 'false' ){
+                $data->equipment_status = filter_var($data->equipment_status, FILTER_VALIDATE_BOOLEAN);
+            }else{
+                $data->equipment_status = filter_var($data->equipment_status, FILTER_VALIDATE_BOOLEAN);
+            }
+        }
 
         $validator = Validator::make((array)$data, [
             'unit' => ['min:3', Rule::unique('equipments', 'unit')->ignore($equip->id) ],
@@ -233,10 +234,12 @@ class ApiPostController extends Controller
         // $equip->mechanical_status = $data->mechanical_status !== null ? $data->mechanical_status : $equip->mechanical_status;
         $equip->mechanical_status = isset($data->mechanical_status) ? $data->mechanical_status : $equip->mechanical_status;
 
+        $equip->updated_at = now();
+
         $equip->save();
 
-        
-        $this->logUpdateEquip($equip, $request->header('Authorization') );
+        if($oldData->equipment_status !== $equip->equipment_status)
+            $this->logUpdateEquip($equip, $request->header('Authorization') );
 
         // temperary change for app usage
         $equip->equipment_status = $equip->equipment_status === 'AV' ? true : false;
@@ -284,14 +287,14 @@ class ApiPostController extends Controller
         ]);
     }
 
-    public function logUpdateEquip($data, $token){
+    public function logUpdateEquip($equip, $token){
 
-        switch($data->equipment_status){
+        switch($equip->equipment_status){
             case 'AV':
-                $this->logAV();
+                $this->logAV($equip, $token);
                 break;
             case 'DM':
-                $this->logDM();
+                $this->logDM($equip, $token);
                 break;
             default:
                 break;
@@ -336,11 +339,47 @@ class ApiPostController extends Controller
         
     }
 
-    public function logDM(){
+    public function logDM($equip, $token){
 
+        if( $equip->updated_at->format('H') > 19 && $equip->updated_at->format('H') < 7 )
+            $shift = "Day";
+        else
+            $shift = "Night";
+
+        if( $equip->updated_at->format('H') >= 7 && $equip->updated_at->format('H') <= 8 )
+            $startStatus = "DM";
+        else
+            $startStatus = "AV";
+
+        $equipClass = $equip->EquipmentClassList()->first();
+
+        //get user information based on token
+        $http = new \GuzzleHttp\Client;
+        $user = (object)json_decode((string) $http->request('GET', url('/').'/api/auth/user', [
+            'headers' => [
+                'Accept' => 'application/json',
+                'Authorization' => $token,
+            ],
+        ])->getBody(), true);
+
+        EquipUpdateLog::create([
+            'date' => $equip->updated_at->format('d M'),
+            'shift' => $shift,
+            'smu' => $equip->ltd_smu,
+            'unit' => $equip->unit,
+            'class' => $equipClass->billing_rate.' '.$equipClass->equipment_class_name,
+            'summary' => $equipClass->billing_rate,
+            'start_of_shift_status' => $startStatus,
+            'current_status' => 'DM',
+            'down_at' => now()->format("H:i"),
+            'time_entry' => now()->format("H:i"),
+            'updated_at' => now(),
+            'equipment_id' => $equip->id,
+            'user_id' => $user->id
+        ]);
     }
 
-    public function logAV(){
+    public function logAV($equip, $token){
         
     }
 
