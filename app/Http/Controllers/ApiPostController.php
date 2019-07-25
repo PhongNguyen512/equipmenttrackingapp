@@ -8,6 +8,7 @@ use App\Equipment;
 use App\EquipmentClass;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use DateTime;
 
 class ApiPostController extends Controller
 {
@@ -180,10 +181,6 @@ class ApiPostController extends Controller
     }
 
     public function updateEquip(Request $request, Equipment $equip){
-        
-        // return response()->json([
-        //     'data' => json_decode($request->getContent(), true),
-        // ]);
 
         $data = json_decode($request->getContent(), true);
 
@@ -197,19 +194,13 @@ class ApiPostController extends Controller
         $data = (object)$data;
 
         //This is for TESTING ONLY. Postman can't POST data with boolean. The following code is for convert string -> boolean
-        if($data->equipment_status !== null){
-            if($data->equipment_status === 'false' ){
-                $data->equipment_status = filter_var($data->equipment_status, FILTER_VALIDATE_BOOLEAN);
-            }else{
-                $data->equipment_status = filter_var($data->equipment_status, FILTER_VALIDATE_BOOLEAN);
-            }
-        }
-
-        //validate input value
-        // $validator = Validator::make($data, [
-        //     'unit' => ['min:3', Rule::unique('equipments', 'unit')->ignore($equip->id) ],
-        //     'ltd_smu' => ['numeric'],
-        // ]);
+        // if($data->equipment_status !== null){
+        //     if($data->equipment_status === 'false' ){
+        //         $data->equipment_status = filter_var($data->equipment_status, FILTER_VALIDATE_BOOLEAN);
+        //     }else{
+        //         $data->equipment_status = filter_var($data->equipment_status, FILTER_VALIDATE_BOOLEAN);
+        //     }
+        // }
 
         $validator = Validator::make((array)$data, [
             'unit' => ['min:3', Rule::unique('equipments', 'unit')->ignore($equip->id) ],
@@ -243,6 +234,9 @@ class ApiPostController extends Controller
         $equip->mechanical_status = isset($data->mechanical_status) ? $data->mechanical_status : $equip->mechanical_status;
 
         $equip->save();
+
+        // $this->logUpdateEquip($equip, str_replace("Bearer ", "", $request->header('Authorization')) );
+        $this->logUpdateEquip($equip, $request->header('Authorization') );
 
         // temperary change for app usage
         $equip->equipment_status = $equip->equipment_status === 'AV' ? true : false;
@@ -290,4 +284,39 @@ class ApiPostController extends Controller
         ]);
     }
 
+    public function logUpdateEquip($data, $token){
+        $equipmentId = $data->id;
+
+        //Convert the updated time
+        $datetime = new DateTime($data->updated_at);
+
+        if( $datetime->format('H') >= 18 && $datetime->format('H') <= 7 )
+            $shift = "Day";
+        else
+            $shift = "Night";
+
+        $smu = $data->ltd_smu;
+
+        $unit = $data->unit;
+
+        $equipClass = $data->EquipmentClassList()->first();
+
+        $class = $equipClass->billing_rate.' '.$equipClass->equipment_class_name;
+
+        $summary = $equipClass->billing_rate;
+
+        $http = new \GuzzleHttp\Client;
+
+        $response = json_decode((string) $http->request('GET', url('/').'/api/auth/user', [
+            'headers' => [
+                'Accept' => 'application/json',
+                'Authorization' => $token,
+            ],
+        ])->getBody(), true);
+
+        
+       
+        dd($response);
+        
+    }
 }
