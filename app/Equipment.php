@@ -16,5 +16,7 @@ class Equipment extends Model
     {
         return $this->belongsTo(EquipmentClass::class, 'equipment_class_id');
     }
-    
+    public function UpdateLog(){
+        return $this->hasOne('App\EquipUpdateLog', 'equipment_id', 'id');
+    }
 }

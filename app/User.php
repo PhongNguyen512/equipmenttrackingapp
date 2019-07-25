@@ -42,4 +42,8 @@ class User extends Authenticatable
     public function GetRole(){
         return $this->belongsTo(UserRole::class, 'user_role_id');
     }
+
+    public function UpdateLog(){
+        return $this->hasOne('App\EquipUpdateLog', 'user_id', 'id');
+    }
 }
