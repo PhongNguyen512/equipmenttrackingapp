@@ -29,14 +29,14 @@ class UserSeeder extends Seeder
             'user_role_id' => 2,
             'password' => bcrypt('secret'),
         ]);
-        
-    	foreach (range(1,5) as $index) {
-	        DB::table('users')->insert([
+
+        for($i = 1; $i < 5; $i++){
+            DB::table('users')->insert([
 	            'name' => $faker->name,
-                'email' => $faker->email,
+                'email' => 'user'.$i.'@abc.com',
                 'user_role_id' => 3,
 	            'password' => bcrypt('secret'),
 	        ]);
-	    }
+        }
     }
 }

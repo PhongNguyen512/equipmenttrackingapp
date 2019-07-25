@@ -235,7 +235,7 @@ class ApiPostController extends Controller
 
         $equip->save();
 
-        // $this->logUpdateEquip($equip, str_replace("Bearer ", "", $request->header('Authorization')) );
+        
         $this->logUpdateEquip($equip, $request->header('Authorization') );
 
         // temperary change for app usage
