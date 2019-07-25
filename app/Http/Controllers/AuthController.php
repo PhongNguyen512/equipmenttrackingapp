@@ -32,11 +32,12 @@ class AuthController extends Controller
                 'message' => 'Unauthorized'
             ], 401);
 
-        $userRole = User::select('*')->where('email', $request->email)->first()->GetRole()->first()->role;
+        $userRole = strtolower(User::select('*')->where('email', $request->email)
+                            ->first()->GetRole()->first()->role);
 
         $http = new \GuzzleHttp\Client;
 
-        switch( strtolower($userRole) ){
+        switch( $userRole ){
             case 'admin':
                 $scope = 'admin';
                 break;
@@ -72,7 +73,8 @@ class AuthController extends Controller
             'token' => json_decode((string) $response->getBody(), true),
             'id' => $user->id,
             'email' => $user->email,            
-            'name' => $user->name 
+            'name' => $user->name,
+            'role' => $userRole
         ]);
     }
 
