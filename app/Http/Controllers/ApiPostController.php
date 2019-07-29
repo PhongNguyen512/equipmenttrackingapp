@@ -10,6 +10,8 @@ use App\EquipUpdateLog;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use DateTime;
+use App\Exceptions\Handler;
+use Illuminate\Support\Facades\DB;
 
 class ApiPostController extends Controller
 {
@@ -195,13 +197,13 @@ class ApiPostController extends Controller
         $data = (object)$data;
 
         //This is for TESTING ONLY. Postman can't POST data with boolean. The following code is for convert string -> boolean
-        if($data->equipment_status !== null){
-            if($data->equipment_status === 'false' ){
-                $data->equipment_status = filter_var($data->equipment_status, FILTER_VALIDATE_BOOLEAN);
-            }else{
-                $data->equipment_status = filter_var($data->equipment_status, FILTER_VALIDATE_BOOLEAN);
-            }
-        }
+        // if($data->equipment_status !== null){
+        //     if($data->equipment_status === 'false' ){
+        //         $data->equipment_status = filter_var($data->equipment_status, FILTER_VALIDATE_BOOLEAN);
+        //     }else{
+        //         $data->equipment_status = filter_var($data->equipment_status, FILTER_VALIDATE_BOOLEAN);
+        //     }
+        // }
 
         $validator = Validator::make((array)$data, [
             'unit' => ['min:3', Rule::unique('equipments', 'unit')->ignore($equip->id) ],
@@ -239,7 +241,7 @@ class ApiPostController extends Controller
         $equip->save();
 
         if($oldData->equipment_status !== $equip->equipment_status)
-            $this->logUpdateEquip($equip, $request->header('Authorization') );
+            $this->logUpdateEquip($equip, $request->header('Authorization'), $data );
 
         // temperary change for app usage
         $equip->equipment_status = $equip->equipment_status === 'AV' ? true : false;
@@ -287,61 +289,24 @@ class ApiPostController extends Controller
         ]);
     }
 
-    public function logUpdateEquip($equip, $token){
+    public function logUpdateEquip($equip, $token, $data){
 
         switch($equip->equipment_status){
             case 'AV':
-                $this->logAV($equip, $token);
+                $this->logAV($equip, $token, $data);
                 break;
             case 'DM':
-                $this->logDM($equip, $token);
+                $this->logDM($equip, $token, $data);
                 break;
             default:
                 break;
         }
-
-
-
-        // $equipmentId = $data->id;
-
-        // //Convert the updated time
-        // $datetime = new DateTime($data->updated_at);
-
-        // if( $datetime->format('H') > 19 && $datetime->format('H') < 7 )
-        //     $shift = "Day";
-        // else
-        //     $shift = "Night";
-
-        // $smu = $data->ltd_smu;
-
-        // $unit = $data->unit;
-
-        // $equipClass = $data->EquipmentClassList()->first();
-
-        // $class = $equipClass->billing_rate.' '.$equipClass->equipment_class_name;
-
-        // $summary = $equipClass->billing_rate;
-
-        // $http = new \GuzzleHttp\Client;
-
-        // $user = json_decode((string) $http->request('GET', url('/').'/api/auth/user', [
-        //     'headers' => [
-        //         'Accept' => 'application/json',
-        //         'Authorization' => $token,
-        //     ],
-        // ])->getBody(), true);
-
-        // //location will be prompt by foremen
-        // // $location = 
-
-       
-        // dd($data);
         
     }
 
-    public function logDM($equip, $token){
+    public function logDM($equip, $token, $data){
 
-        if( $equip->updated_at->format('H') > 19 && $equip->updated_at->format('H') < 7 )
+        if( $equip->updated_at->format('H') < 19 && $equip->updated_at->format('H') > 7 )
             $shift = "Day";
         else
             $shift = "Night";
@@ -371,16 +336,110 @@ class ApiPostController extends Controller
             'summary' => $equipClass->billing_rate,
             'start_of_shift_status' => $startStatus,
             'current_status' => 'DM',
+            'comments' => ( isset($data->comments) ? $data->comments : '' ),
             'down_at' => now()->format("H:i"),
             'time_entry' => now()->format("H:i"),
+            'location' => ( isset($data->location) ? $data->location : '' ),
             'updated_at' => now(),
             'equipment_id' => $equip->id,
             'user_id' => $user->id
         ]);
     }
 
-    public function logAV($equip, $token){
+    private function logAV($equip, $token, $data){
+
+        try{
+            $logEntry = DB::table('equip_update_logs')
+                        ->where('date', '=', now()->format('d M'))
+                        ->where('equipment_id', '=', $equip->id)
+                        ->first();
+            
+            if($logEntry !== null){
+                //get the data with EquipUpdateLog type for using save() later
+                $logEntry = EquipUpdateLog::find($logEntry->id);
+                $this->updateExistLogEntry($equip, $logEntry, $data);
+            }
+            else{
+                $this->newLogEntryAV($equip, $token, $data);
+            }
+            
+        }catch(Exception $e){
         
+        }
+    }
+
+    private function updateExistLogEntry($equip, $logEntry, $data){
+
+        $logEntry->smu = $equip->ltd_smu;
+        $logEntry->current_status = 'AV';
+        $logEntry->up_at = now()->format("H:i");
+        $logEntry->time_entry = now()->format("H:i");
+        $logEntry->updated_at = now();
+
+        //get the difference in minutes
+        $time_diff = date_diff( date_create($logEntry->down_at), date_create($logEntry->up_at) );
+        $downTime = round(($time_diff->h * 60 + $time_diff->i) / 60, 2) ;
+
+        $logEntry->down_hrs = $downTime;
+
+        //calculate parked_hrs
+        $logEntry->parked_hrs = 12 - $logEntry->down_hrs - ($logEntry->operated_hrs !== null ? $logEntry->operated_hrs : 0);
+
+        if( isset($data->comments) )
+            $logEntry->comments = $data->comments;
+        
+        if( isset($data->location) )
+            $logEntry->location = $data->location;
+        
+        $logEntry->save();
+    }
+
+    private function newLogEntryAV($equip, $token, $data){
+
+        if( $equip->updated_at->format('H') < 19 && $equip->updated_at->format('H') > 7 )
+            $shift = "Day";
+        else
+            $shift = "Night";
+
+        $equipClass = $equip->EquipmentClassList()->first();
+
+        //get user information based on token
+        $http = new \GuzzleHttp\Client;
+        $user = (object)json_decode((string) $http->request('GET', url('/').'/api/auth/user', [
+            'headers' => [
+                'Accept' => 'application/json',
+                'Authorization' => $token,
+            ],
+        ])->getBody(), true);
+
+        $downAt = date("H:i", strtotime("07:00am"));
+        $upAt = now()->format("H:i");
+
+        //get the difference in minutes
+        $time_diff = date_diff( date_create($downAt), date_create($upAt) );
+        $downTime = round(($time_diff->h * 60 + $time_diff->i) / 60, 2) ;
+        $parkTime = 12 - $downTime;
+
+        EquipUpdateLog::create([
+            'date' => $equip->updated_at->format('d M'),
+            'shift' => $shift,
+            'smu' => $equip->ltd_smu,
+            'unit' => $equip->unit,
+            'class' => $equipClass->billing_rate.' '.$equipClass->equipment_class_name,
+            'summary' => $equipClass->billing_rate,
+            'parked_hrs' => $parkTime,
+            'down_hrs' => $downTime,
+            'start_of_shift_status' => "DM",
+            'current_status' => 'AV',
+            'down_at' => $downAt,
+            'up_at' => $upAt,
+            'time_entry' => now()->format("H:i"),
+            'updated_at' => now(),
+            'equipment_id' => $equip->id,
+            'user_id' => $user->id,
+            'comments' => ( isset($data->comments) ? $data->comments : '' ),
+            'location' => ( isset($data->location) ? $data->location : '' ),
+        ]);
     }
 
 
