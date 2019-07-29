@@ -352,6 +352,7 @@ class ApiPostController extends Controller
             $logEntry = DB::table('equip_update_logs')
                         ->where('date', '=', now()->format('d M'))
                         ->where('equipment_id', '=', $equip->id)
+                        ->latest()
                         ->first();
             
             if($logEntry !== null){
