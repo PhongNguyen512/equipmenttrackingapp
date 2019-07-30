@@ -80,7 +80,23 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
+        $token = $request->header('Authorization');
+
+        //get user information based on token
+        $http = new \GuzzleHttp\Client;
+        $user = (object)json_decode((string) $http->request('GET', url('/').'/api/auth/user', [
+            'headers' => [
+                'Accept' => 'application/json',
+                'Authorization' => $token,
+            ],
+        ])->getBody(), true);
+
+        $user = User::find($user->id);
+        $user->app_token = '';
+        $user->save();
+
         $request->user()->token()->revoke();
+
         return response()->json([
             'message' => 'Successfully logged out'
         ]);
