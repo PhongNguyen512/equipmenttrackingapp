@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use Laravel\Passport\Passport;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 
@@ -13,7 +15,7 @@ class AuthServiceProvider extends ServiceProvider
      * @var array
      */
     protected $policies = [
-        // 'App\Model' => 'App\Policies\ModelPolicy',
+        'App\Model' => 'App\Policies\ModelPolicy',
     ];
 
     /**
@@ -25,6 +27,20 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
-        //
+        // Route::middleware('cors')->group(function() {
+            Passport::routes();
+        // });
+        // Passport::routes();
+
+
+        Passport::tokensExpireIn(now()->addMinutes(180));
+        // Passport::tokensExpireIn(now()->addSeconds(1));
+
+        Passport::tokensCan([
+            'admin' => 'Do anything',
+            'coordinator' => 'Limit in some actions',
+            'foremen' => 'Limit alot action'
+        ]);
+
     }
 }

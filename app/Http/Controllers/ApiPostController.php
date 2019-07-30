@@ -3,11 +3,17 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\User;
 use App\Site;
 use App\Equipment;
 use App\EquipmentClass;
+use App\EquipUpdateLog;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use DateTime;
+use App\Exceptions\Handler;
+use Illuminate\Support\Facades\DB;
+use Edujugon\PushNotification\PushNotification;
 
 class ApiPostController extends Controller
 {
@@ -23,7 +29,7 @@ class ApiPostController extends Controller
         if($validator->fails()){
             return response()->json([
                 'error' => $validator->messages()->first(),
-            ]);
+            ], 401);
         }
 
         Site::create([
@@ -52,7 +58,7 @@ class ApiPostController extends Controller
         if($validator->fails()){
             return response()->json([
                 'error' => $validator->messages()->first(),
-            ]);
+            ], 401);
         }
 
         EquipmentClass::create([
@@ -93,7 +99,7 @@ class ApiPostController extends Controller
         if($validator->fails()){
             return response()->json([
                 'error' => $validator->messages()->first(),
-            ]);
+            ], 401);
         }
 
         Equipment::create([
@@ -121,7 +127,7 @@ class ApiPostController extends Controller
         if( count($request->all()) == 0 ){
             return response()->json([
                 'error' => 'Updating data not found',
-            ]);
+            ], 401);
         }
 
          //validate input value
@@ -132,7 +138,7 @@ class ApiPostController extends Controller
         if($validator->fails()){
             return response()->json([
                 'error' => $validator->messages()->first(),
-            ]);
+            ], 401);
         }
 
         $oldData = Site::find($site->id);
@@ -151,7 +157,7 @@ class ApiPostController extends Controller
         if( count($request->all()) == 0 ){
             return response()->json([
                 'error' => 'Updating data not found',
-            ]);
+            ], 401);
         }
 
         //validate input value
@@ -162,7 +168,7 @@ class ApiPostController extends Controller
         if($validator->fails()){
             return response()->json([
                 'error' => $validator->messages()->first(),
-            ]);
+            ], 401);
         }
 
         $oldData = EquipmentClass::find($equipClass->id);
@@ -180,10 +186,6 @@ class ApiPostController extends Controller
     }
 
     public function updateEquip(Request $request, Equipment $equip){
-        echo("start of update");
-        // return response()->json([
-        //     'data' => json_decode($request->getContent(), true),
-        // ]);
 
         $data = json_decode($request->getContent(), true);
 
@@ -195,21 +197,6 @@ class ApiPostController extends Controller
         }
 
         $data = (object)$data;
-
-        //This is for TESTING ONLY. Postman can't POST data with boolean. The following code is for convert string -> boolean
-        if($data->equipment_status !== null){
-            if($data->equipment_status === 'false' ){
-                $data->equipment_status = filter_var($data->equipment_status, FILTER_VALIDATE_BOOLEAN);
-            }else{
-                $data->equipment_status = filter_var($data->equipment_status, FILTER_VALIDATE_BOOLEAN);
-            }
-        }
-
-        //validate input value
-        // $validator = Validator::make($data, [
-        //     'unit' => ['min:3', Rule::unique('equipments', 'unit')->ignore($equip->id) ],
-        //     'ltd_smu' => ['numeric'],
-        // ]);
 
         $validator = Validator::make((array)$data, [
             'unit' => ['min:3', Rule::unique('equipments', 'unit')->ignore($equip->id) ],
@@ -242,9 +229,27 @@ class ApiPostController extends Controller
         // $equip->mechanical_status = $data->mechanical_status !== null ? $data->mechanical_status : $equip->mechanical_status;
         $equip->mechanical_status = isset($data->mechanical_status) ? $data->mechanical_status : $equip->mechanical_status;
 
+        $equip->updated_at = now();
+
         $equip->save();
 
-        echo("end of update equip");
+        //Send notification only for admin and coordinator
+        $users = DB::table('users')
+            ->where('user_role_id', '=', '1')
+            ->orWhere('user_role_id', '=', '2')
+            ->get();
+
+        //go to each filtered user and push notification
+        foreach($users as $user){
+            $this->sendNotification($user->app_token, $equip);
+        }
+
+        if($oldData->equipment_status !== $equip->equipment_status)
+            $this->logUpdateEquip($equip, $request->header('Authorization'), $data );
+
+        // temperary change for app usage
+        $equip->equipment_status = $equip->equipment_status === 'AV' ? true : false;
+
         return response()->json([
             'success' => 'An equipment has been update',
             'old data' => $oldData,
@@ -288,4 +293,183 @@ class ApiPostController extends Controller
         ]);
     }
 
+    public function logUpdateEquip($equip, $token, $data){
+
+        switch($equip->equipment_status){
+            case 'AV':
+                $this->logAV($equip, $token, $data);
+                break;
+            case 'DM':
+                $this->logDM($equip, $token, $data);
+                break;
+            default:
+                break;
+        }
+        
+    }
+
+    public function logDM($equip, $token, $data){
+
+        if( $equip->updated_at->format('H') < 19 && $equip->updated_at->format('H') > 7 )
+            $shift = "Day";
+        else
+            $shift = "Night";
+
+        if( $equip->updated_at->format('H') >= 7 && $equip->updated_at->format('H') <= 8 )
+            $startStatus = "DM";
+        else
+            $startStatus = "AV";
+
+        $equipClass = $equip->EquipmentClassList()->first();
+
+        //get user information based on token
+        $http = new \GuzzleHttp\Client;
+        $user = (object)json_decode((string) $http->request('GET', url('/').'/api/auth/user', [
+            'headers' => [
+                'Accept' => 'application/json',
+                'Authorization' => $token,
+            ],
+        ])->getBody(), true);
+
+        EquipUpdateLog::create([
+            'date' => $equip->updated_at->format('d M'),
+            'shift' => $shift,
+            'smu' => $equip->ltd_smu,
+            'unit' => $equip->unit,
+            'class' => $equipClass->billing_rate.' '.$equipClass->equipment_class_name,
+            'summary' => $equipClass->billing_rate,
+            'start_of_shift_status' => $startStatus,
+            'current_status' => 'DM',
+            'comments' => ( isset($data->comments) ? $data->comments : '' ),
+            'down_at' => now()->format("H:i"),
+            'time_entry' => now()->format("H:i"),
+            'location' => ( isset($data->location) ? $data->location : '' ),
+            'updated_at' => now(),
+            'equipment_id' => $equip->id,
+            'user_id' => $user->id
+        ]);
+    }
+
+    private function logAV($equip, $token, $data){
+
+        try{
+            $logEntry = DB::table('equip_update_logs')
+                        ->where('date', '=', now()->format('d M'))
+                        ->where('equipment_id', '=', $equip->id)
+                        ->latest()
+                        ->first();
+            
+            if($logEntry !== null){
+                //get the data with EquipUpdateLog type for using save() later
+                $logEntry = EquipUpdateLog::find($logEntry->id);
+                $this->updateExistLogEntry($equip, $logEntry, $data);
+            }
+            else{
+                $this->newLogEntryAV($equip, $token, $data);
+            }
+            
+        }catch(Exception $e){
+        
+        }
+    }
+
+    private function updateExistLogEntry($equip, $logEntry, $data){
+
+        $logEntry->smu = $equip->ltd_smu;
+        $logEntry->current_status = 'AV';
+        $logEntry->up_at = now()->format("H:i");
+        $logEntry->time_entry = now()->format("H:i");
+        $logEntry->updated_at = now();
+
+        //get the difference in minutes
+        $time_diff = date_diff( date_create($logEntry->down_at), date_create($logEntry->up_at) );
+        $downTime = round(($time_diff->h * 60 + $time_diff->i) / 60, 2) ;
+
+        $logEntry->down_hrs = $downTime;
+
+        //calculate parked_hrs
+        $logEntry->parked_hrs = 12 - $logEntry->down_hrs - ($logEntry->operated_hrs !== null ? $logEntry->operated_hrs : 0);
+
+        if( isset($data->comments) )
+            $logEntry->comments = $data->comments;
+        
+        if( isset($data->location) )
+            $logEntry->location = $data->location;
+        
+        $logEntry->save();
+    }
+
+    private function newLogEntryAV($equip, $token, $data){
+
+        if( $equip->updated_at->format('H') < 19 && $equip->updated_at->format('H') > 7 )
+            $shift = "Day";
+        else
+            $shift = "Night";
+
+        $equipClass = $equip->EquipmentClassList()->first();
+
+        //get user information based on token
+        $http = new \GuzzleHttp\Client;
+        $user = (object)json_decode((string) $http->request('GET', url('/').'/api/auth/user', [
+            'headers' => [
+                'Accept' => 'application/json',
+                'Authorization' => $token,
+            ],
+        ])->getBody(), true);
+
+        $downAt = date("H:i", strtotime("07:00am"));
+        $upAt = now()->format("H:i");
+
+        //get the difference in minutes
+        $time_diff = date_diff( date_create($downAt), date_create($upAt) );
+        $downTime = round(($time_diff->h * 60 + $time_diff->i) / 60, 2) ;
+        $parkTime = 12 - $downTime;
+
+        EquipUpdateLog::create([
+            'date' => $equip->updated_at->format('d M'),
+            'shift' => $shift,
+            'smu' => $equip->ltd_smu,
+            'unit' => $equip->unit,
+            'class' => $equipClass->billing_rate.' '.$equipClass->equipment_class_name,
+            'summary' => $equipClass->billing_rate,
+            'parked_hrs' => $parkTime,
+            'down_hrs' => $downTime,
+            'start_of_shift_status' => "DM",
+            'current_status' => 'AV',
+            'down_at' => $downAt,
+            'up_at' => $upAt,
+            'time_entry' => now()->format("H:i"),
+            'updated_at' => now(),
+            'equipment_id' => $equip->id,
+            'user_id' => $user->id,
+            'comments' => ( isset($data->comments) ? $data->comments : '' ),
+            'location' => ( isset($data->location) ? $data->location : '' ),
+        ]);
+    }
+
+    private function sendNotification($appToken, $equip){
+
+        $equipId = $equip->id;
+        $equipmentClassId = $equip->EquipmentClassList()->get()->first()->id;
+        $siteId = EquipmentClass::find($equipmentClassId)->SiteList()->get()->first()->id;
+
+        $push = new PushNotification('fcm');
+        $push->setMessage([
+                'notification' => [
+                    'title' => 'Equipment Update Detected',
+                    'body' => $equip->unit.' has been updated',
+                    'sound' => true,
+                    'click_action' => 'FCM_PLUGIN_ACTIVITY'
+                    ],
+                'data' => [
+                    'action' => 'openEquipment',
+                    'siteId' => $siteId,
+                    'equipmentClassId' => $equipmentClassId,
+                    'equipmentId' => $equipId
+                ]
+            ])
+            ->setApiKey('AIzaSyAmQCoLOKOfz7AY8J22RP_q43fO7TfLKxM')
+            ->setDevicesToken($appToken)
+            ->send();
+    }
 }
