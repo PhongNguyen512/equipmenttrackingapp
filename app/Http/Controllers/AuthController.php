@@ -111,4 +111,38 @@ class AuthController extends Controller
         
         return json_decode((string) $response->getBody(), true);
     }
+
+    public function getAppToken(Request $request){
+        if( $request->pwa_token === null && $request->app_token === null ){
+            return response()->json([
+                'message' => 'App Token not found'
+            ], 400);
+        }else{
+
+            $accessToken = $request->header('Authorization');
+
+            //get user information based on token
+            $http = new \GuzzleHttp\Client;
+            $user = (object)json_decode((string) $http->request('GET', url('/').'/api/auth/user', [
+                'headers' => [
+                    'Accept' => 'application/json',
+                    'Authorization' => $accessToken,
+                ],
+            ])->getBody(), true);
+
+            $user = User::find($user->id);
+
+            if( isset($request->app_token) )
+                $user->app_token = $request->app_token;
+            else if( isset($request->pwa_token) )
+                $user->pwa_token = $request->pwa_token;
+
+            $user->save();
+
+            return response()->json([
+                'message' => 'Tokens are assigned to user'
+            ], 200);    
+        }        
+    }
+
 }

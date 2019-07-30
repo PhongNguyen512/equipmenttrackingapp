@@ -79,6 +79,8 @@ Route::group([ 'prefix' => 'auth', 'middleware' => 'cors' ], function () {
         //eta.test/api/auth/user
         Route::get('user', 'AuthController@user');
 
+        //eta.test/api/auth/appToken
+        Route::post('appToken', 'AuthController@getAppToken');
 
     });
 });
