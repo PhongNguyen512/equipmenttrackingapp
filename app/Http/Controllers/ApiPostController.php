@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\User;
 use App\Site;
 use App\Equipment;
 use App\EquipmentClass;
@@ -12,6 +13,7 @@ use Illuminate\Validation\Rule;
 use DateTime;
 use App\Exceptions\Handler;
 use Illuminate\Support\Facades\DB;
+use Edujugon\PushNotification\PushNotification;
 
 class ApiPostController extends Controller
 {
@@ -196,15 +198,6 @@ class ApiPostController extends Controller
 
         $data = (object)$data;
 
-        //This is for TESTING ONLY. Postman can't POST data with boolean. The following code is for convert string -> boolean
-        // if($data->equipment_status !== null){
-        //     if($data->equipment_status === 'false' ){
-        //         $data->equipment_status = filter_var($data->equipment_status, FILTER_VALIDATE_BOOLEAN);
-        //     }else{
-        //         $data->equipment_status = filter_var($data->equipment_status, FILTER_VALIDATE_BOOLEAN);
-        //     }
-        // }
-
         $validator = Validator::make((array)$data, [
             'unit' => ['min:3', Rule::unique('equipments', 'unit')->ignore($equip->id) ],
             'ltd_smu' => ['numeric'],
@@ -239,6 +232,17 @@ class ApiPostController extends Controller
         $equip->updated_at = now();
 
         $equip->save();
+
+        //Send notification only for admin and coordinator
+        $users = DB::table('users')
+            ->where('user_role_id', '=', '1')
+            ->orWhere('user_role_id', '=', '2')
+            ->get();
+
+        //go to each filtered user and push notification
+        foreach($users as $user){
+            $this->sendNotification($user->app_token, $equip);
+        }
 
         if($oldData->equipment_status !== $equip->equipment_status)
             $this->logUpdateEquip($equip, $request->header('Authorization'), $data );
@@ -443,5 +447,29 @@ class ApiPostController extends Controller
         ]);
     }
 
+    private function sendNotification($appToken, $equip){
 
+        $equipId = $equip->id;
+        $equipmentClassId = $equip->EquipmentClassList()->get()->first()->id;
+        $siteId = EquipmentClass::find($equipmentClassId)->SiteList()->get()->first()->id;
+
+        $push = new PushNotification('fcm');
+        $push->setMessage([
+                'notification' => [
+                    'title' => 'Equipment Update Detected',
+                    'body' => $equip->unit.' has been updated',
+                    'sound' => true,
+                    'click_action' => 'FCM_PLUGIN_ACTIVITY'
+                    ],
+                'data' => [
+                    'action' => 'openEquipment',
+                    'siteId' => $siteId,
+                    'equipmentClassId' => $equipmentClassId,
+                    'equipmentId' => $equipId
+                ]
+            ])
+            ->setApiKey('AIzaSyAmQCoLOKOfz7AY8J22RP_q43fO7TfLKxM')
+            ->setDevicesToken($appToken)
+            ->send();
+    }
 }
