@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Site;
 use App\Equipment;
 use App\EquipmentClass;
+use App\User;
 
 class ApiGetController extends Controller
 {
@@ -127,6 +128,24 @@ class ApiGetController extends Controller
                 $object->equipment_status = false;
 
             $object->machanical_status = $equip->machanical_status;
+
+            array_push($finalData, $object);
+        }
+
+        return response()->json($finalData);
+    }
+
+    /////////
+    // All user 
+    ////////
+    public function allUser(){
+        $users = User::all();
+        $finalData = [];
+
+        foreach($users as $user){
+            $object = new \stdClass();
+            $object->id = $user->id;
+            $object->name = $user->name;
 
             array_push($finalData, $object);
         }

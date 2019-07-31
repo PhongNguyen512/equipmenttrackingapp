@@ -185,7 +185,7 @@ class ApiPostController extends Controller
         ]);
     }
 
-    public function updateEquip(Request $request, Equipment $equip){    
+    public function updateEquip(Request $request, Equipment $equip){  
 
         $data = json_decode($request->getContent(), true);
 
@@ -491,5 +491,56 @@ class ApiPostController extends Controller
             ->setDevicesToken($appToken->pwa_token)
             ->send();
         }
+    }
+
+    public function getEntryLog(Request $request){
+        $flag1Date = $flag2Date = false;
+        if( isset($request->fromDate) && isset($request->toDate) ){
+            $fromDate = $request->fromDate;
+            $toDate = $request->toDate;
+            $flag2Date = true;
+        }
+        elseif( isset($request->fromDate) ){
+            $date = $request->fromDate;
+
+            $flag1Date = true;
+        }
+        elseif( isset($request->toDate) ){
+            $date = $request->toDate;
+
+            $flag1Date = true;
+        }
+
+        if( $flag2Date ){
+            $logEntry = DB::table('equip_update_logs')
+                        ->whereBetween('date', [$fromDate, $toDate])->get();
+        }elseif( $flag1Date ){
+            $logEntry = DB::table('equip_update_logs')
+                        ->where('date', '=', $date)->get();
+        }
+
+        return response()->json($logEntry); 
+    }
+
+    public function updateLogEntry(Request $request){
+        // if( isset($request->id) || $request->id === null )
+        //     return response()->json([
+        //         'message' => 'Log Entry Not Found',
+        //     ], 400);
+        
+        // $logEntries = json_decode($request->getContent(), true);
+
+        // foreach($logEntries as $logEntry){
+        //     DB::table('equip_update_logs')
+        //             ->where('id', $logEntry->id)
+        //             ->update([
+        //                 'shift' => $logEntry->shift,
+        //                 'smu' => $logEntry->smu,
+        //                 'start_of_shift' => $logEntry->start_of_shift,
+        //                 'comments' => $logEntry->comments,
+        //                 'current_status' => $logEntry->current_status,
+                        
+        //             ]);
+        // }
     }
 }
