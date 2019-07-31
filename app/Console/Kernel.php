@@ -14,6 +14,7 @@ class Kernel extends ConsoleKernel
      */
     protected $commands = [
         Commands\DailyTask::class,
+        Commands\ForcedLogDaily::class,
     ];
 
     /**
@@ -29,6 +30,9 @@ class Kernel extends ConsoleKernel
 
         $schedule->command('rToken:delete')
                 ->dailyAt('9:00');
+
+        $schedule->command('log:forced')
+                ->dailyAt('23:58');
     }
 
     /**

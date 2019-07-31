@@ -17,7 +17,7 @@ class UpdateEquipUpdateLogsTable extends Migration
             $table->bigInteger('equipment_id')->unsigned();             
             $table->foreign('equipment_id')->references('id')->on('equipments');  
 
-            $table->bigInteger('user_id')->unsigned();             
+            $table->bigInteger('user_id')->unsigned()->nullable();             
             $table->foreign('user_id')->references('id')->on('users');            
         });
     }

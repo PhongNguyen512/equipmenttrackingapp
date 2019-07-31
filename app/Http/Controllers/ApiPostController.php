@@ -185,7 +185,7 @@ class ApiPostController extends Controller
         ]);
     }
 
-    public function updateEquip(Request $request, Equipment $equip){
+    public function updateEquip(Request $request, Equipment $equip){    
 
         $data = json_decode($request->getContent(), true);
 
