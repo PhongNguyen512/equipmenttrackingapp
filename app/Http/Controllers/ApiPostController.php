@@ -241,7 +241,7 @@ class ApiPostController extends Controller
 
         //go to each filtered user and push notification
         foreach($users as $user){
-            $this->sendNotification($user->app_token, $equip);
+            $this->sendNotification($user, $equip);
         }
 
         if($oldData->equipment_status !== $equip->equipment_status)
@@ -454,7 +454,26 @@ class ApiPostController extends Controller
         $siteId = EquipmentClass::find($equipmentClassId)->SiteList()->get()->first()->id;
 
         $push = new PushNotification('fcm');
-        $push->setMessage([
+        if( isset($appToken->app_token) ){
+            $push->setMessage([
+                    'notification' => [
+                        'title' => 'Equipment Update Detected',
+                        'body' => $equip->unit.' has been updated',
+                        'sound' => true,
+                        'click_action' => 'FCM_PLUGIN_ACTIVITY'
+                        ],
+                    'data' => [
+                        'action' => 'openEquipment',
+                        'siteId' => $siteId,
+                        'equipmentClassId' => $equipmentClassId,
+                        'equipmentId' => $equipId
+                    ]
+                ])
+                ->setApiKey('AIzaSyAmQCoLOKOfz7AY8J22RP_q43fO7TfLKxM')
+                ->setDevicesToken($appToken->app_token)
+                ->send();
+        }else if( isset($appToken->pwa_token) ){
+            $push->setMessage([
                 'notification' => [
                     'title' => 'Equipment Update Detected',
                     'body' => $equip->unit.' has been updated',
@@ -469,7 +488,8 @@ class ApiPostController extends Controller
                 ]
             ])
             ->setApiKey('AIzaSyAmQCoLOKOfz7AY8J22RP_q43fO7TfLKxM')
-            ->setDevicesToken($appToken)
+            ->setDevicesToken($appToken->pwa_token)
             ->send();
+        }
     }
 }
