@@ -95,7 +95,11 @@ class AuthController extends Controller
         $user->app_token = '';
         $user->save();
 
-        $request->user()->token()->revoke();
+        $request->user()->token()->revoke();        
+
+        DB::table('oauth_refresh_tokens')
+            ->where('access_token_id', '=', $request->user()->token()->id)
+            ->update(['revoked' => 1]);
 
         return response()->json([
             'message' => 'Successfully logged out'
