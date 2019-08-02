@@ -19,7 +19,7 @@ class CreateEquipUpdateLogsTable extends Migration
             $table->string('shift');
             $table->integer('smu');
             $table->string('unit');
-            $table->string('class');
+            $table->string('equipment_class');
             $table->string('summary')->nullable();
             $table->float('parked_hrs')->default('12.00');
             $table->float('operated_hrs')->nullable();

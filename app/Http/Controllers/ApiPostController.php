@@ -14,6 +14,7 @@ use DateTime;
 use App\Exceptions\Handler;
 use Illuminate\Support\Facades\DB;
 use Edujugon\PushNotification\PushNotification;
+use Carbon\Carbon;
 
 class ApiPostController extends Controller
 {
@@ -336,7 +337,7 @@ class ApiPostController extends Controller
             'shift' => $shift,
             'smu' => $equip->ltd_smu,
             'unit' => $equip->unit,
-            'class' => $equipClass->billing_rate.' '.$equipClass->equipment_class_name,
+            'equipment_class' => $equipClass->billing_rate.' '.$equipClass->equipment_class_name,
             'summary' => $equipClass->billing_rate,
             'start_of_shift_status' => $startStatus,
             'current_status' => 'DM',
@@ -430,7 +431,7 @@ class ApiPostController extends Controller
             'shift' => $shift,
             'smu' => $equip->ltd_smu,
             'unit' => $equip->unit,
-            'class' => $equipClass->billing_rate.' '.$equipClass->equipment_class_name,
+            'equipment_class' => $equipClass->billing_rate.' '.$equipClass->equipment_class_name,
             'summary' => $equipClass->billing_rate,
             'parked_hrs' => $parkTime,
             'down_hrs' => $downTime,
@@ -593,5 +594,11 @@ class ApiPostController extends Controller
                 'parked_hrs' => $parkTime,
                 'down_hrs' => $downTime
             ]);
+    }
+
+    public function test(){
+        $test = Carbon::now();
+        $test2 = Carbon::now()->add(2, 'day');
+        dd($test, $test2);
     }
 }

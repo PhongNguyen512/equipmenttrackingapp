@@ -92,3 +92,6 @@ Route::group([ 'prefix' => 'auth', 'middleware' => 'cors' ], function () {
 
     });
 });
+
+// eta.test/api/test
+Route::get('test', 'ApiPostController@test');
