@@ -502,18 +502,20 @@ class ApiPostController extends Controller
         }
         elseif( isset($request->fromDate) ){
             $date = $request->fromDate;
-
             $flag1Date = true;
         }
         elseif( isset($request->toDate) ){
             $date = $request->toDate;
-
             $flag1Date = true;
         }
 
         if( $flag2Date ){
+            //conver the time search input into
+            $fromDate = date('Y-m-d', strtotime($fromDate) );
+            $toDate = date('Y-m-d', strtotime($toDate) + (3600 * 24) );
+            
             $logEntry = DB::table('equip_update_logs')
-                        ->whereBetween('date', [$fromDate, $toDate])->get();
+                        ->whereBetween('created_at', [$fromDate, $toDate])->get();
         }elseif( $flag1Date ){
             $logEntry = DB::table('equip_update_logs')
                         ->where('date', '=', $date)->get();
