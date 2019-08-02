@@ -64,6 +64,9 @@ Route::group(['middleware' => ['cors', 'auth:api' ] ], function(){
 
     //eta.test/api/getEntryLog
     Route::post('/getEntryLog', 'ApiPostController@getEntryLog')->middleware(['scope:coordinator,admin']);
+
+    //eta.test/api/updateLogEntry
+    Route::post('/updateLogEntry', 'ApiPostController@updateLogEntry')->middleware(['scope:coordinator,admin']);
 });
 
 //////////////////////////////////////

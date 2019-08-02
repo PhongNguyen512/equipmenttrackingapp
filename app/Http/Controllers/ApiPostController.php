@@ -524,25 +524,74 @@ class ApiPostController extends Controller
         return response()->json($logEntry); 
     }
 
-    public function updateLogEntry(Request $request){
-        // if( isset($request->id) || $request->id === null )
-        //     return response()->json([
-        //         'message' => 'Log Entry Not Found',
-        //     ], 400);
-        
-        // $logEntries = json_decode($request->getContent(), true);
+    public function updateLogEntry(Request $request){       
+ 
+        if( !isset($request->id) || $request->id === null )
+            return response()->json([
+                'message' => 'Log Entry Not Found',
+            ], 400);
 
-        // foreach($logEntries as $logEntry){
-        //     DB::table('equip_update_logs')
-        //             ->where('id', $logEntry->id)
-        //             ->update([
-        //                 'shift' => $logEntry->shift,
-        //                 'smu' => $logEntry->smu,
-        //                 'start_of_shift' => $logEntry->start_of_shift,
-        //                 'comments' => $logEntry->comments,
-        //                 'current_status' => $logEntry->current_status,
-                        
-        //             ]);
-        // }
+        //get data of the entry log which is updating
+        $logEntry = DB::table('equip_update_logs')
+                    ->where('id', $request->id)
+                    ->get()->first();
+
+        //get all of log entries of same equipment at same date
+        $arrayDownUpTime = json_decode(DB::table('equip_update_logs')
+                    ->select('down_at', 'up_at')
+                    ->where('date', '=', $logEntry->date)
+                    ->where('unit', '=', $logEntry->unit)
+                    ->get(), true);
+
+        //convert input search time for checking later
+        $down_at = strtotime($request->down_at);
+        $up_at = strtotime($request->up_at);
+
+        //only check if the equipment only have 1 entry log of that day
+        if( sizeof($arrayDownUpTime) > 1 ){
+            //checking input search time with down-up time in database            
+            foreach($arrayDownUpTime as $time){
+                $time = (object)$time;
+                if( $up_at > strtotime($time->down_at) && $up_at < strtotime($time->up_at) ||
+                    $down_at > strtotime($time->down_at) && $down_at < strtotime($time->up_at) ||
+                    strtotime($time->down_at) > $down_at && strtotime($time->down_at) < $up_at &&
+                    strtotime($time->up_at) > $down_at && strtotime($time->up_at) < $up_at ){
+                        return response()->json([
+                            'error' => "The up or down time is inside timeframe of another log entry. Please check.",
+                        ])->setStatusCode(400);
+                }
+            }    
+        }     
+        
+        //get the difference in minutes
+        $time_diff = date_diff( date_create(date('H:i:s', $down_at)), date_create(date('H:i:s', $up_at)) );
+        $downTime = round(($time_diff->h * 60 + $time_diff->i) / 60, 2) ;
+        $parkTime = 12 - $downTime;
+
+        //check if input down_at is ~7-8
+        //system will force change the start shift status to DM
+        $start_of_shift = '';
+        if( isset($request->start_of_shift) ){
+            
+            if( date('H', strtotime($request->down_at)) >= 7 && date('H', strtotime($request->down_at)) < 9 )
+                $start_of_shift = "DM";
+            else
+                $start_of_shift = $request->start_of_shift;
+        }
+
+        DB::table('equip_update_logs')
+            ->where('id', $logEntry->id)
+            ->update([
+                'shift' => $request->shift,
+                'smu' => $request->smu,
+                'start_of_shift_status' => $start_of_shift,
+                'comments' => $request->comments,
+                'current_status' => $request->current_status,
+                'down_at' => date('H:i:s', $down_at),
+                'up_at' => date('H:i:s', $up_at),
+                'user_id' => $request->user_id,
+                'parked_hrs' => $parkTime,
+                'down_hrs' => $downTime
+            ]);
     }
 }

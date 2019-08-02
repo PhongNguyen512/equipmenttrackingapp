@@ -29,7 +29,7 @@ class Kernel extends ConsoleKernel
         //          ->hourly();
 
         $schedule->command('rToken:delete')
-                ->dailyAt('9:00');
+                ->dailyAt('7:00');
 
         $schedule->command('log:forced')
                 ->dailyAt('23:58');
