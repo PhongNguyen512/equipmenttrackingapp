@@ -530,12 +530,18 @@ class ApiPostController extends Controller
         if( !isset($request->id) || $request->id === null )
             return response()->json([
                 'message' => 'Log Entry Not Found',
-            ], 400);
+            ], 404);
 
         //get data of the entry log which is updating
         $logEntry = DB::table('equip_update_logs')
                     ->where('id', $request->id)
                     ->get()->first();
+
+        if($logEntry === null){
+            return response()->json([
+                'message' => 'Invalid Log Entry'
+            ], 404);
+        }
 
         //get all of log entries of same equipment at same date
         $arrayDownUpTime = json_decode(DB::table('equip_update_logs')
@@ -590,15 +596,27 @@ class ApiPostController extends Controller
                 'current_status' => $request->current_status,
                 'down_at' => date('H:i:s', $down_at),
                 'up_at' => date('H:i:s', $up_at),
+                'time_entry' => Carbon::now()->format('H:i'),
                 'user_id' => $request->user_id,
                 'parked_hrs' => $parkTime,
                 'down_hrs' => $downTime
             ]);
+
+        return response()->json([
+            'message' => 'Log Entry Updated',
+        ]);
     }
 
     public function test(){
-        $test = Carbon::now();
-        $test2 = Carbon::now()->add(2, 'day');
-        dd($test, $test2);
+        // $test = Carbon::now();
+        // $test2 = Carbon::now()->sub(2, 'day'); 
+
+        // $randNum = rand(7, 15);
+        // $downAt = date("H:i", strtotime($randNum.":00"));
+
+        // $carbon = Carbon::parse($downAt);
+
+
+        // dd($carbon);
     }
 }
