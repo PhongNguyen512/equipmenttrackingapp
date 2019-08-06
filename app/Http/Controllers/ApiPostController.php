@@ -220,6 +220,11 @@ class ApiPostController extends Controller
 
         $equip->unit = isset($data->unit) ? $data->unit : $equip->unit;
         $equip->description = isset($data->description) ? $data->description : $equip->description;
+
+        if($data->ltd_smu !== $equip->ltd_smu){
+            $equip->last_entry_ltd_smu =$equip->ltd_smu;
+        }
+
         $equip->ltd_smu = isset($data->ltd_smu) ? $data->ltd_smu : $equip->ltd_smu;
         $equip->owning_status = isset($data->owning_status) ? $data->owning_status : $equip->owning_status;
 
@@ -231,6 +236,17 @@ class ApiPostController extends Controller
         $equip->mechanical_status = isset($data->mechanical_status) ? $data->mechanical_status : $equip->mechanical_status;
 
         $equip->updated_at = now();
+
+        //if lat or lng is empty return error
+        //gps need lat and lng
+        if( isset($data->lat) && isset($data->lng) ){
+            $equip->lat = $data->lat;
+            $equip->lng = $data->lng;
+        }elseif( !isset($data->lat) || !isset($data->lng) ){
+            return response()->json([
+                'message' => 'Something wrong with location coordinates'
+            ], 400);
+        }
 
         $equip->save();
 
@@ -244,7 +260,7 @@ class ApiPostController extends Controller
         foreach($users as $user){
             $this->sendNotification($user, $equip);
         }
-
+  
         if($oldData->equipment_status !== $equip->equipment_status)
             $this->logUpdateEquip($equip, $request->header('Authorization'), $data );
 
@@ -344,10 +360,13 @@ class ApiPostController extends Controller
             'comments' => ( isset($data->comments) ? $data->comments : '' ),
             'down_at' => now()->format("H:i"),
             'time_entry' => now()->format("H:i"),
-            'location' => ( isset($data->location) ? $data->location : '' ),
             'updated_at' => now(),
             'equipment_id' => $equip->id,
-            'user_id' => $user->id
+            'user_id' => $user->id,
+            'lat' => ( isset($data->lat) ? $data->lat : '' ),
+            'lng' => ( isset($data->lng) ? $data->lng : '' ),
+            'created_at' => now(),
+            'updated_at' => now()
         ]);
     }
 
@@ -393,10 +412,14 @@ class ApiPostController extends Controller
 
         if( isset($data->comments) )
             $logEntry->comments = $data->comments;
+
+        if( isset($data->lat) && isset($data->lng) ){
+            $logEntry->lat = $data->lat;
+            $logEntry->lng = $data->lng;
+        }
         
-        if( isset($data->location) )
-            $logEntry->location = $data->location;
-        
+        $logEntry->updated_at = now();
+
         $logEntry->save();
     }
 
@@ -444,7 +467,10 @@ class ApiPostController extends Controller
             'equipment_id' => $equip->id,
             'user_id' => $user->id,
             'comments' => ( isset($data->comments) ? $data->comments : '' ),
-            'location' => ( isset($data->location) ? $data->location : '' ),
+            'lat' => ( isset($data->lat) ? $data->lat : '' ),
+            'lng' => ( isset($data->lng) ? $data->lng : '' ),
+            'created_at' => now(),
+            'updated_at' => now()
         ]);
     }
 
