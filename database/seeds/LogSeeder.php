@@ -16,7 +16,7 @@ class LogSeeder extends Seeder
             'shift' => "Day",
             'smu' => rand(15236, 1547985),
             'unit' => 'AT1111',
-            'class' => 'Class 01',
+            'equipment_class' => 'Class 01',
             'start_of_shift_status' => 'AV',
             'current_status' => 'AV',
             'equipment_id' => 1,

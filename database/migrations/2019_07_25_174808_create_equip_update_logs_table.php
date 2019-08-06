@@ -30,7 +30,6 @@ class CreateEquipUpdateLogsTable extends Migration
             $table->time('down_at')->nullable();
             $table->time('up_at')->nullable();
             $table->time('time_entry')->nullable();
-            $table->string('location')->nullable();
             $table->timestamps();
         });
     }
