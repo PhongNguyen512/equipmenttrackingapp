@@ -544,25 +544,31 @@ class ApiPostController extends Controller
         }
 
         //get all of log entries of same equipment at same date
+        //except itself
         $arrayDownUpTime = json_decode(DB::table('equip_update_logs')
                     ->select('down_at', 'up_at')
                     ->where('date', '=', $logEntry->date)
                     ->where('unit', '=', $logEntry->unit)
+                    ->where('id', '<>', $logEntry->id)
                     ->get(), true);
 
-        //convert input search time for checking later
-        $down_at = strtotime($request->down_at);
-        $up_at = strtotime($request->up_at);
+        //convert input search time for checking later       
+        $down_at = Carbon::parse($request->down_at)->format('H:i:s');
+        $up_at = $request->up_at !== null ? Carbon::parse($request->up_at)->format('H:i:s') : null;
 
-        //only check if the equipment only have 1 entry log of that day
+        //only check if the equipment have more than 1 entry log of that day (except itself)
         if( sizeof($arrayDownUpTime) > 1 ){
             //checking input search time with down-up time in database            
             foreach($arrayDownUpTime as $time){
                 $time = (object)$time;
-                if( $up_at > strtotime($time->down_at) && $up_at < strtotime($time->up_at) ||
-                    $down_at > strtotime($time->down_at) && $down_at < strtotime($time->up_at) ||
-                    strtotime($time->down_at) > $down_at && strtotime($time->down_at) < $up_at &&
-                    strtotime($time->up_at) > $down_at && strtotime($time->up_at) < $up_at ){
+
+                if($time->up_at === null)
+                    continue;
+
+                if( $up_at > Carbon::parse($time->down_at)->format('H:i:s') && $up_at < Carbon::parse($time->up_at)->format('H:i:s') ||
+                    $down_at > Carbon::parse($time->down_at)->format('H:i:s') && $down_at < Carbon::parse($time->up_at)->format('H:i:s') ||
+                    Carbon::parse($time->down_at)->format('H:i:s') > $down_at && Carbon::parse($time->down_at)->format('H:i:s') < $up_at &&
+                    Carbon::parse($time->up_at)->format('H:i:s') > $down_at && Carbon::parse($time->up_at)->format('H:i:s') < $up_at ){
                         return response()->json([
                             'error' => "The up or down time is inside timeframe of another log entry. Please check.",
                         ])->setStatusCode(400);
@@ -570,20 +576,28 @@ class ApiPostController extends Controller
             }    
         }     
         
-        //get the difference in minutes
-        $time_diff = date_diff( date_create(date('H:i:s', $down_at)), date_create(date('H:i:s', $up_at)) );
-        $downTime = round(($time_diff->h * 60 + $time_diff->i) / 60, 2) ;
-        $parkTime = 12 - $downTime;
+        if($up_at !== null){
+            //get the difference in minutes
+            $time_diff = date_diff( date_create( $down_at), date_create( $up_at) );
+            $downTime = round(($time_diff->h * 60 + $time_diff->i) / 60, 2) ;
+            $parkTime = 12 - $downTime;
+        }
 
         //check if input down_at is ~7-8
         //system will force change the start shift status to DM
         $start_of_shift = '';
         if( isset($request->start_of_shift) ){
-            
-            if( date('H', strtotime($request->down_at)) >= 7 && date('H', strtotime($request->down_at)) < 9 )
+            if( Carbon::parse($request->down_at)->format('H') >= 7 && Carbon::parse($request->down_at)->format('H') < 9 )
                 $start_of_shift = "DM";
             else
                 $start_of_shift = $request->start_of_shift;
+        }
+
+        $current_status = '';
+        if($up_at !== null && $down_at !== null){
+            $current_status = 'AV';
+        }elseif($down_at !== null & $up_at === null){
+            $current_status = 'DM';
         }
 
         DB::table('equip_update_logs')
@@ -593,13 +607,13 @@ class ApiPostController extends Controller
                 'smu' => $request->smu,
                 'start_of_shift_status' => $start_of_shift,
                 'comments' => $request->comments,
-                'current_status' => $request->current_status,
-                'down_at' => date('H:i:s', $down_at),
-                'up_at' => date('H:i:s', $up_at),
+                'current_status' => $current_status,
+                'down_at' =>  $down_at,
+                'up_at' => $up_at,
                 'time_entry' => Carbon::now()->format('H:i'),
                 'user_id' => $request->user_id,
-                'parked_hrs' => $parkTime,
-                'down_hrs' => $downTime
+                'parked_hrs' => isset($parkTime) ? $parkTime : 12.00,
+                'down_hrs' => isset($downTime) ? $downTime : 0.00
             ]);
 
         return response()->json([
@@ -614,9 +628,9 @@ class ApiPostController extends Controller
         // $randNum = rand(7, 15);
         // $downAt = date("H:i", strtotime($randNum.":00"));
 
-        // $carbon = Carbon::parse($downAt);
+        $carbon = Carbon::parse("25 Jul");
 
 
-        // dd($carbon);
+        dd($carbon);
     }
 }

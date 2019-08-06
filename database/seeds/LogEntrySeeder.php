@@ -30,8 +30,10 @@ class LogEntrySeeder extends Seeder
             else
                 $start_of_shift = "AV";
 
+            $date = Carbon::now()->sub( (10-$i), 'day')->format('d M');
+
             DB::table('equip_update_logs')->insert([
-                'date' => Carbon::now()->sub( (10-$i), 'day')->format('d M'),
+                'date' => $date,
                 'shift' => 'Day',
                 'smu' => '123456789',
                 'unit' => $equipment->unit,
@@ -44,13 +46,15 @@ class LogEntrySeeder extends Seeder
                 'start_of_shift_status' => $start_of_shift,
                 'current_status' => 'AV',
                 'equipment_id' => $equipment->id,
-                'user_id' => 1
+                'user_id' => 1,
+                'created_at' => Carbon::parse($date)
             ]);
 
             $i++;
 
+            $date = Carbon::now()->sub( (10-$i), 'day')->format('d M');
             DB::table('equip_update_logs')->insert([
-                'date' => Carbon::now()->sub( (10-$i), 'day')->format('d M'),
+                'date' => $date,
                 'shift' => 'Day',
                 'smu' => '1234567',
                 'unit' => $equipment->unit,
@@ -60,7 +64,8 @@ class LogEntrySeeder extends Seeder
                 'start_of_shift_status' => "DM",
                 'current_status' => 'DM',
                 'equipment_id' => $equipment->id,
-                'user_id' => 1
+                'user_id' => 1,
+                'created_at' => Carbon::parse($date)
             ]);
 
         }

@@ -26,7 +26,7 @@ class CreateEquipUpdateLogsTable extends Migration
             $table->float('down_hrs')->nullable()->default('0.00');
             $table->string('start_of_shift_status');
             $table->string('comments')->nullable();
-            $table->string('current_status');
+            $table->string('current_status')->nullable();
             $table->time('down_at')->nullable();
             $table->time('up_at')->nullable();
             $table->time('time_entry')->nullable();
