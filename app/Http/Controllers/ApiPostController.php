@@ -242,7 +242,8 @@ class ApiPostController extends Controller
         if( isset($data->lat) && isset($data->lng) ){
             $equip->lat = $data->lat;
             $equip->lng = $data->lng;
-        }elseif( !isset($data->lat) || !isset($data->lng) ){
+        }elseif( !isset($data->lat) && isset($data->lng) 
+            || !isset($data->lng) && isset($data->lat) ){
             return response()->json([
                 'message' => 'Something wrong with location coordinates'
             ], 400);
@@ -268,7 +269,7 @@ class ApiPostController extends Controller
         $equip->equipment_status = $equip->equipment_status === 'AV' ? true : false;
 
         return response()->json([
-            'success' => 'An equipment has been update',
+            'success' => 'An equipment has been updated',
             'old data' => $oldData,
             'new data' => $equip,
         ]);

@@ -56,6 +56,8 @@ class ApiGetController extends Controller
             $object->description = $d->description;
             $object->ltd_smu = $d->ltd_smu;
             $object->owning_status = $d->owning_status;
+            $object->lat = $d->lat;
+            $object->lng = $d->lng;
 
             if($d->equipment_status === 'AV')
                 $object->equipment_status = true;
@@ -152,5 +154,5 @@ class ApiGetController extends Controller
 
         return response()->json($finalData);
     }
-    
+
 }
