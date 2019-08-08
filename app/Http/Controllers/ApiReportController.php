@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Site;
 use App\Equipment;
 use App\EquipmentClass;
+use Illuminate\Support\Facades\DB;
 
 class ApiReportController extends Controller
 {
@@ -45,7 +46,15 @@ class ApiReportController extends Controller
             $object->equipment_status = $d->equipment_status;
 
             if($d->equipment_status === 'DM'){
-                
+                try{
+                $logEntry = DB::table('equip_update_logs')
+                        ->where('unit', '=', $d->unit)
+                        ->latest()
+                        ->first();
+                $object->est_date_of_repair = $logEntry->est_date_of_repair;
+                }catch(Exception $e){
+                    dd($logEntry);
+                }
             }
 
             array_push($returnData, $object);
