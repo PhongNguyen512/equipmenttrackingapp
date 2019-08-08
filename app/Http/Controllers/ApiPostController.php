@@ -247,6 +247,9 @@ class ApiPostController extends Controller
             return response()->json([
                 'message' => 'Something wrong with location coordinates'
             ], 400);
+        }else{
+            $equip->lat = 0;
+            $equip->lng = 0;
         }
 
         $equip->save();
@@ -364,8 +367,8 @@ class ApiPostController extends Controller
             'updated_at' => now(),
             'equipment_id' => $equip->id,
             'user_id' => $user->id,
-            'lat' => ( isset($data->lat) ? $data->lat : '' ),
-            'lng' => ( isset($data->lng) ? $data->lng : '' ),
+            'lat' => ( isset($data->lat) ? $data->lat : 0 ),
+            'lng' => ( isset($data->lng) ? $data->lng : 0 ),
             'created_at' => now(),
             'updated_at' => now()
         ]);
@@ -468,8 +471,8 @@ class ApiPostController extends Controller
             'equipment_id' => $equip->id,
             'user_id' => $user->id,
             'comments' => ( isset($data->comments) ? $data->comments : '' ),
-            'lat' => ( isset($data->lat) ? $data->lat : '' ),
-            'lng' => ( isset($data->lng) ? $data->lng : '' ),
+            'lat' => ( isset($data->lat) ? $data->lat : 0 ),
+            'lng' => ( isset($data->lng) ? $data->lng : 0 ),
             'created_at' => now(),
             'updated_at' => now()
         ]);
