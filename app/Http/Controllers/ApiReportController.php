@@ -45,19 +45,27 @@ class ApiReportController extends Controller
             $object->unit = $d->unit;
             $object->equipment_status = $d->equipment_status;
 
-            if($d->equipment_status === 'DM'){
-                $logEntry = DB::table('equip_update_logs')
+            $logEntry = DB::table('equip_update_logs')
                         ->where('unit', '=', $d->unit)
                         ->latest()
                         ->first();
-                        
-                if($logEntry !== null)
+
+            if($logEntry !== null){
+                if($d->equipment_status === 'DM')
                     $object->est_date_of_repair = $logEntry->est_date_of_repair;
-                else
-                    $object->est_date_of_repair = null;
+
+                $object->note = $logEntry->comments;
             }
+            else{
+                $object->est_date_of_repair = null;
+                $object->note = null;
+            }
+
+            $object->additional_detail = isset($d->additional_detail) ? $d->additional_detail : null;
+
             array_push($returnData, $object);
         }
         return $returnData;
     }
+
 }

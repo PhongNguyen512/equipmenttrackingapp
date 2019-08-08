@@ -252,6 +252,8 @@ class ApiPostController extends Controller
             $equip->lng = 0;
         }
 
+        $equip->additional_detail = isset($data->additional_detail) ? $data->additional_detail : null;
+
         $equip->save();
 
         //Send notification only for admin and coordinator
@@ -369,6 +371,7 @@ class ApiPostController extends Controller
             'user_id' => $user->id,
             'lat' => ( isset($data->lat) ? $data->lat : 0 ),
             'lng' => ( isset($data->lng) ? $data->lng : 0 ),
+            'est_date_of_repair' => ( isset($data->est_date_of_repair) ? $data->est_date_of_repair : null ),
             'created_at' => now(),
             'updated_at' => now()
         ]);
@@ -643,7 +646,8 @@ class ApiPostController extends Controller
                 'time_entry' => Carbon::now()->format('H:i'),
                 'user_id' => $request->user_id,
                 'parked_hrs' => isset($parkTime) ? $parkTime : 12.00,
-                'down_hrs' => isset($downTime) ? $downTime : 0.00
+                'down_hrs' => isset($downTime) ? $downTime : 0.00,
+                'est_date_of_repair' => isset($request->est_date_of_repair) ? $request->est_date_of_repair : null
             ]);
 
         return response()->json([
