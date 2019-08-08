@@ -18,6 +18,8 @@ class ApiReportController extends Controller
         $object = new \stdClass();
         $object->id = $site->id;
         $object->site_name = $site->site_name;
+        $object->date = now()->format('M d, Y');
+        $object->time = now()->format('H:i');
         $object->equipment_class_list = $this->getEquipClass($site->EquipmentClassList()->get());      
 
         return response()->json($object);
@@ -67,5 +69,7 @@ class ApiReportController extends Controller
         }
         return $returnData;
     }
+
+    
 
 }
