@@ -18,6 +18,7 @@ class ApiReportController extends Controller
         
         if(Cache::has('cacheReport')){
             $object = Cache::get('cacheReport');
+            $object->time = now()->format('H:i');
         }
         else{
             
