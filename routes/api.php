@@ -72,6 +72,10 @@ Route::group(['middleware' => ['cors', 'auth:api' ] ], function(){
     //eta.test/api/getReport/1
     Route::get('/getReport/{site}','ApiReportController@getReport')->middleware(['scope:coordinator,admin']);
 
+    //eta.test/api/updateReport
+    //update for each item in report
+    Route::post('/updateReport', 'ApiReportController@updateReport')->middleware(['scope:coordinator,admin']);
+
 });
 
 //////////////////////////////////////
@@ -99,4 +103,4 @@ Route::group([ 'prefix' => 'auth', 'middleware' => 'cors' ], function () {
 });
 
 // eta.test/api/test
-Route::get('test', 'ApiPostController@test');
+Route::get('test', 'ApiReportController@test');
