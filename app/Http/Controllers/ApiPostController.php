@@ -393,7 +393,7 @@ class ApiPostController extends Controller
 
         try{
             $logEntry = DB::table('equip_update_logs')
-                        ->where('date', '=', now()->format('d M'))
+                        ->where('date', '=', now()->format('Y-m-d'))
                         ->where('equipment_id', '=', $equip->id)
                         ->latest()
                         ->first();
