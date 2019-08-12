@@ -367,7 +367,7 @@ class ApiPostController extends Controller
         ])->getBody(), true);
 
         EquipUpdateLog::create([
-            'date' => $equip->updated_at->format('d M, Y'),
+            'date' => $equip->updated_at->format('Y-m-d'),
             'shift' => $shift,
             'smu' => $equip->ltd_smu,
             'unit' => $equip->unit,
@@ -383,7 +383,7 @@ class ApiPostController extends Controller
             'user_id' => $user->id,
             'lat' => ( isset($data->lat) ? $data->lat : 0 ),
             'lng' => ( isset($data->lng) ? $data->lng : 0 ),
-            'est_date_of_repair' => ( isset($data->est_date_of_repair) ? date('d M, Y', strtotime($data->est_date_of_repair) ) : null ),
+            'est_date_of_repair' => ( isset($data->est_date_of_repair) ? date('Y-m-d', strtotime($data->est_date_of_repair) ) : null ),
             'created_at' => now(),
             'updated_at' => now()
         ]);
@@ -469,7 +469,7 @@ class ApiPostController extends Controller
         $parkTime = 12 - $downTime;
 
         EquipUpdateLog::create([
-            'date' => $equip->updated_at->format('d M, Y'),
+            'date' => $equip->updated_at->format('Y-m-d'),
             'shift' => $shift,
             'smu' => $equip->ltd_smu,
             'unit' => $equip->unit,
