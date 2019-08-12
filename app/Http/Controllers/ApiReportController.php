@@ -109,7 +109,7 @@ class ApiReportController extends Controller
                 DB::table('equip_update_logs')
                     ->where('id', $logEntryID)
                     ->update([
-                        'est_date_of_repair' => $request->est_date_of_repair
+                        'est_date_of_repair' => date('d M, Y', strtotime($request->est_date_of_repair))
                     ]);
 
         }

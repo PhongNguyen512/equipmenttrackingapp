@@ -273,6 +273,18 @@ class ApiPostController extends Controller
         // temperary change for app usage
         $equip->equipment_status = $equip->equipment_status === 'AV' ? true : false;
 
+        //get est date of repair if equip is DM
+        if(!$equip->equipment_status){
+            $logEntry = DB::table('equip_update_logs')
+                    ->where('unit', '=', $equip->unit)
+                    ->latest()
+                    ->first();
+                    
+            if($logEntry !== null)
+                $equip->est_date_of_repair = $logEntry->est_date_of_repair;
+        }else
+            $equip->est_date_of_repair = null;
+
         return response()->json([
             'success' => 'An equipment has been updated',
             'old data' => $oldData,
@@ -355,7 +367,7 @@ class ApiPostController extends Controller
         ])->getBody(), true);
 
         EquipUpdateLog::create([
-            'date' => $equip->updated_at->format('d M'),
+            'date' => $equip->updated_at->format('d M, Y'),
             'shift' => $shift,
             'smu' => $equip->ltd_smu,
             'unit' => $equip->unit,
@@ -371,7 +383,7 @@ class ApiPostController extends Controller
             'user_id' => $user->id,
             'lat' => ( isset($data->lat) ? $data->lat : 0 ),
             'lng' => ( isset($data->lng) ? $data->lng : 0 ),
-            'est_date_of_repair' => ( isset($data->est_date_of_repair) ? $data->est_date_of_repair : null ),
+            'est_date_of_repair' => ( isset($data->est_date_of_repair) ? date('d M, Y', strtotime($data->est_date_of_repair) ) : null ),
             'created_at' => now(),
             'updated_at' => now()
         ]);
@@ -457,7 +469,7 @@ class ApiPostController extends Controller
         $parkTime = 12 - $downTime;
 
         EquipUpdateLog::create([
-            'date' => $equip->updated_at->format('d M'),
+            'date' => $equip->updated_at->format('d M, Y'),
             'shift' => $shift,
             'smu' => $equip->ltd_smu,
             'unit' => $equip->unit,

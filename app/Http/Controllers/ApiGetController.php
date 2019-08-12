@@ -7,6 +7,7 @@ use App\Site;
 use App\Equipment;
 use App\EquipmentClass;
 use App\User;
+use Illuminate\Support\Facades\DB;
 
 class ApiGetController extends Controller
 {
@@ -65,6 +66,17 @@ class ApiGetController extends Controller
                 $object->equipment_status = false;
 
             $object->mechanical_status = $d->mechanical_status;
+
+            if(!$object->equipment_status){
+
+                $logEntry = DB::table('equip_update_logs')
+                        ->where('unit', '=', $object->unit)
+                        ->latest()
+                        ->first();
+                if($logEntry !== null)
+                    $object->est_date_of_repair = $logEntry->est_date_of_repair;
+            }else
+                $object->est_date_of_repair = null;
 
             array_push($returnData, $object);
         }
