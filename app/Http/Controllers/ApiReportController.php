@@ -8,6 +8,7 @@ use App\Equipment;
 use App\EquipmentClass;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Carbon\Carbon;
 
 class ApiReportController extends Controller
 {
@@ -15,24 +16,33 @@ class ApiReportController extends Controller
     // Get Report 
     ////////
     public function getReport(Site $site){
-        
+
         if(Cache::has('cacheReport')){
             $object = Cache::get('cacheReport');
-            $object->time = now()->format('H:i');
+    
+            if($object->id !== $site->id )
+                $object = $this->cacheReportData($site);
+            else
+                $object->time = now()->format('H:i');
         }
         else{
-            
-            $object = new \stdClass();
-            $object->id = $site->id;
-            $object->site_name = $site->site_name;
-            $object->date = now()->format('M d, Y');
-            $object->time = now()->format('H:i');
-            $object->equipment_class_list = $this->getEquipClass($site->EquipmentClassList()->get()); 
-
-            Cache::put('cacheReport', $object, 600);
+            $object = $this->cacheReportData($site);
         }
 
         return response()->json($object);
+    }
+
+    private function cacheReportData($site){
+        $object = new \stdClass();
+        $object->id = $site->id;
+        $object->site_name = $site->site_name;
+        $object->date = now()->format('M d, Y');
+        $object->time = now()->format('H:i');
+        $object->equipment_class_list = $this->getEquipClass($site->EquipmentClassList()->get()); 
+
+        Cache::put('cacheReport', $object, 600);
+
+        return $object;
     }
     
     private function getEquipClass($data){
@@ -135,7 +145,7 @@ class ApiReportController extends Controller
 
         //get data of cache
         $data = Cache::get('cacheReport');
-
+        
         $equipmentListArray = array_column($convertedArray, 'equipment_list');
         $size = sizeof($equipmentListArray);
 
@@ -163,7 +173,7 @@ class ApiReportController extends Controller
     }
 
     public function test(){
-        dd( Cache::get('cacheReport') );
+        dd( Carbon::now() );
     }
 
 }

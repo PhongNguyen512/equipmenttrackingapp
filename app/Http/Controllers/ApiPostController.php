@@ -546,8 +546,9 @@ class ApiPostController extends Controller
         if( $flag2Date ){
             //conver the time search input into
             $fromDate = date('Y-m-d', strtotime($fromDate) );
-            $toDate = date('Y-m-d', strtotime($toDate) + (3600 * 24) );
-            
+            // $toDate = date('Y-m-d', strtotime($toDate) + (3600 * 24) );
+            $toDate = date('Y-m-d', strtotime($toDate) );
+
             $logEntry = DB::table('equip_update_logs')
                         ->whereBetween('created_at', [$fromDate, $toDate])->get();
         }elseif( $flag1Date ){
