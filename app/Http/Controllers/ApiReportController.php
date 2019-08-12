@@ -9,6 +9,8 @@ use App\EquipmentClass;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
+use App\Exports\SiteReport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ApiReportController extends Controller
 {
@@ -29,6 +31,12 @@ class ApiReportController extends Controller
             $object = $this->cacheReportData($site);
         }
 
+        // dd(json_decode(json_encode($object->equipment_class_list)));
+
+        $data = new SiteReport(json_decode(json_encode($object)), true);
+        
+        // return Excel::download($data, 'testingExcel.xlsx');
+        // dd("see this");
         return response()->json($object);
     }
 
