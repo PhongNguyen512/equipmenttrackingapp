@@ -290,6 +290,10 @@ class ApiReportController extends Controller
                     $sheet->setCellValue('A'.$row, $count++);
                     $sheet->fromArray($equipment, Null, 'B'.$row);
                     $sheet->getStyle('B'.$row.':F'.$row)->applyFromArray($styleEquipment);
+
+                    if($equipment['equipment_status'] === 'DM')
+                        $sheet->getStyle('C'.$row)->getFont()->getColor()->setARGB(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_RED);
+
                     $row++;
                 }
             }
