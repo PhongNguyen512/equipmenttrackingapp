@@ -9,8 +9,10 @@ use App\EquipmentClass;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
-use App\Exports\SiteReport;
 use Maatwebsite\Excel\Facades\Excel;
+
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class ApiReportController extends Controller
 {
@@ -31,12 +33,6 @@ class ApiReportController extends Controller
             $object = $this->cacheReportData($site);
         }
 
-        // dd(json_decode(json_encode($object->equipment_class_list)));
-
-        $data = new SiteReport(json_decode(json_encode($object)), true);
-        
-        // return Excel::download($data, 'testingExcel.xlsx');
-        // dd("see this");
         return response()->json($object);
     }
 
@@ -83,6 +79,8 @@ class ApiReportController extends Controller
             if($logEntry !== null){
                 if($d->equipment_status === 'DM')
                     $object->est_date_of_repair = $logEntry->est_date_of_repair;
+                else
+                    $object->est_date_of_repair =  null;
 
                 $object->note = $logEntry->comments;
             }
@@ -180,8 +178,154 @@ class ApiReportController extends Controller
         Cache::put('cacheReport', $data, 600);
     }
 
-    public function test(){
-        dd( Carbon::now() );
+    public function test(Site $site){
+
+        $object = new \stdClass();
+        $object->id = $site->id;
+        $object->site_name = $site->site_name;
+        $object->date = now()->format('M d, Y');
+        $object->time = now()->format('H:i');
+        $object->equipment_class_list = $this->getEquipClass($site->EquipmentClassList()->get()); 
+
+
+        // if(Cache::has('cacheReport')){
+            // $object = json_decode(json_encode(Cache::get('cacheReport')), true);
+            $object = json_decode(json_encode($object), true);
+            $reportData = [];
+            
+            $spreadsheet = new Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+
+            $headingTitle = ['Unit Number', 'Equipment Status', 'Est Date of Repair', 'Note', 'Additional Detail'];
+       
+            
+            foreach( $object['equipment_class_list'] as $equipment_class ){
+                foreach($equipment_class['equipment_list'] as $equipment){
+                    array_push($reportData, $equipment);
+                }
+            }
+            // dd($reportData);
+
+            //style
+            $styleHeading = [
+                'font' => [
+                    'bold' => true,
+                    'size' => 16
+                ],
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    ],
+                ],
+                'fill' => [
+                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'startColor' => [
+                        'argb' => 'FF87CEFA',
+                    ]
+                ],
+            ];
+
+            $styleSiteName = [
+                'font' => [
+                    'bold' => true,
+                    'size' => 20
+                ],
+                'alignment' => [
+                    'setVertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_TOP,
+                ]
+            ];
+
+            $styleEquipmentClass = [
+                'font' => [
+                    'bold' => true,
+                    'size' => 14
+                ],
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    ],
+                ],
+                'fill' => [
+                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'startColor' => [
+                        'argb' => 'FFC0C0C0',
+                    ]
+                ],
+            ];
+
+            $styleEquipment = [
+                'font' => [
+                    'bold' => true,
+                    'size' => 12
+                ],
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    ],
+                ]
+            ];
+
+            $sheet->getColumnDimension('B')->setWidth(20);
+            $sheet->getColumnDimension('C')->setWidth(26);
+            $sheet->getColumnDimension('D')->setWidth(26);
+            $sheet->getColumnDimension('E')->setWidth(30);
+            $sheet->getColumnDimension('F')->setWidth(32);
+
+            //Data
+            $sheet->setCellValue('C1', $object['site_name'].' Equipment');
+            $sheet->setCellValue('B2', $object['date']);
+            $sheet->setCellValue('D2', $object['time']);
+            $sheet->fromArray($headingTitle, Null, 'B4');
+
+            $sheet->getStyle('B4:F4')->applyFromArray($styleHeading);
+            $sheet->getStyle('C1')->applyFromArray($styleSiteName);
+            // $sheet->fromArray($reportData, Null, 'B5');
+            $row = 5;
+            foreach($object['equipment_class_list'] as $equipment_class){
+                $sheet->setCellValue('B'.$row, $equipment_class['equipment_class_name']);
+                $sheet->getStyle('B'.$row.':F'.$row)->applyFromArray($styleEquipmentClass);
+                $row++;
+                $count = 1;
+                foreach($equipment_class['equipment_list'] as $equipment){
+                    $sheet->setCellValue('A'.$row, $count++);
+                    $sheet->fromArray($equipment, Null, 'B'.$row);
+                    $sheet->getStyle('B'.$row.':F'.$row)->applyFromArray($styleEquipment);
+                    $row++;
+                }
+            }
+            
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('hello world.xlsx');
+        // }
+        // else{
+        //     return response()->json([
+        //         'error' => 'Report not found. Please generate report first.'
+        //     ])->setStatusCode(400);
+        // }
+        
+
+        // if(Cache::has('cacheReport')){
+        //     $object = Cache::get('cacheReport');
+    
+        //     // dd(json_decode(json_encode($object->equipment_class_list)));
+
+        //     // $data = new SiteReport( json_decode(json_encode($object), true) );
+
+        //     $test = new TestReport( json_decode(json_encode($object), true) );
+
+        //     // dd( json_decode(json_encode($object),) );
+            
+        //     // return Excel::download(new SiteReport(json_decode(json_encode($object), true)), 'testingExcel.xlsx' );
+        //     return Excel::download($test, 'export.xlsx');
+        //     // dd("see this");
+        // }
+        // else{
+        //     return response()->json([
+        //         'error' => 'Report not found. Please generate report first.'
+        //     ])->setStatusCode(400);
+        // }
+
+        
     }
 
 }
