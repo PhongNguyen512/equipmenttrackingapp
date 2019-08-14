@@ -14,6 +14,10 @@ use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
+use Illuminate\Support\Facades\Mail;
+use App\Mail\sendReport;
+use Illuminate\Support\Facades\File;
+
 class ApiReportController extends Controller
 {
     /////////
@@ -178,7 +182,7 @@ class ApiReportController extends Controller
         Cache::put('cacheReport', $data, 600);
     }
 
-    public function test(Site $site){
+    public function generateReportFile($site){
 
         $object = new \stdClass();
         $object->id = $site->id;
@@ -186,7 +190,6 @@ class ApiReportController extends Controller
         $object->date = now()->format('M d, Y');
         $object->time = now()->format('H:i');
         $object->equipment_class_list = $this->getEquipClass($site->EquipmentClassList()->get()); 
-
 
         // if(Cache::has('cacheReport')){
             // $object = json_decode(json_encode(Cache::get('cacheReport')), true);
@@ -198,13 +201,11 @@ class ApiReportController extends Controller
 
             $headingTitle = ['Unit Number', 'Equipment Status', 'Est Date of Repair', 'Note', 'Additional Detail'];
        
-            
             foreach( $object['equipment_class_list'] as $equipment_class ){
                 foreach($equipment_class['equipment_list'] as $equipment){
                     array_push($reportData, $equipment);
                 }
             }
-            // dd($reportData);
 
             //style
             $styleHeading = [
@@ -271,6 +272,8 @@ class ApiReportController extends Controller
             $sheet->getColumnDimension('E')->setWidth(30);
             $sheet->getColumnDimension('F')->setWidth(32);
 
+            $sheet->getStyle('B2:D2')->getFont()->setSize(14);
+
             //Data
             $sheet->setCellValue('C1', $object['site_name'].' Equipment');
             $sheet->setCellValue('B2', $object['date']);
@@ -279,7 +282,7 @@ class ApiReportController extends Controller
 
             $sheet->getStyle('B4:F4')->applyFromArray($styleHeading);
             $sheet->getStyle('C1')->applyFromArray($styleSiteName);
-            // $sheet->fromArray($reportData, Null, 'B5');
+
             $row = 5;
             foreach($object['equipment_class_list'] as $equipment_class){
                 $sheet->setCellValue('B'.$row, $equipment_class['equipment_class_name']);
@@ -298,38 +301,64 @@ class ApiReportController extends Controller
                 }
             }
             
+            //file name of the report file
+            $fileName = 'report_'.$object['site_name'].'_equipment_'.( date('Y-m-d', strtotime($object['date']) ) ).'.xlsx';
             $writer = new Xlsx($spreadsheet);
-            $writer->save('hello world.xlsx');
+            $writer->save($fileName);
+
+            $arrayAdditionalReportMail = [];
+            array_push($arrayAdditionalReportMail, [$object['site_name'], $object['date'], $fileName]);
+
+            //testing send email ( TESTING PURPOSE )
+            if(Cache::has('cacheAdditionalReportMail')){
+                Cache::forget('cacheAdditionalReportMail');
+                Cache::put('cacheAdditionalReportMail', $arrayAdditionalReportMail, 600);
+            }
+            else{
+                Cache::put('cacheAdditionalReportMail', $arrayAdditionalReportMail, 600);
+            }
+
         // }
         // else{
         //     return response()->json([
         //         'error' => 'Report not found. Please generate report first.'
         //     ])->setStatusCode(400);
         // }
-        
-
-        // if(Cache::has('cacheReport')){
-        //     $object = Cache::get('cacheReport');
     
-        //     // dd(json_decode(json_encode($object->equipment_class_list)));
+    }
 
-        //     // $data = new SiteReport( json_decode(json_encode($object), true) );
+    public function sendReport(Site $site, Request $request){
 
-        //     $test = new TestReport( json_decode(json_encode($object), true) );
-
-        //     // dd( json_decode(json_encode($object),) );
-            
-        //     // return Excel::download(new SiteReport(json_decode(json_encode($object), true)), 'testingExcel.xlsx' );
-        //     return Excel::download($test, 'export.xlsx');
-        //     // dd("see this");
-        // }
-        // else{
-        //     return response()->json([
-        //         'error' => 'Report not found. Please generate report first.'
-        //     ])->setStatusCode(400);
-        // }
-
+        $this->generateReportFile($site);
         
+        if(Cache::has('cacheAdditionalReportMail')){
+            $data = Cache::get('cacheAdditionalReportMail')[0];
+            $siteName = $data[0];
+            $date = $data[1];
+            $fileName = $data[2];
+        }
+        else{
+            return response()->json([
+                'message' => 'Something wrong with the additional detail for sending mail'
+            ])->setStatusCode(400);
+        }
+
+        //get the email of current user and set as sender
+        $sendFrom = $request->user()->email;
+
+        if( !isset($request->sendTo) ){
+            Mail::to($sendFrom)->send(new sendReport($sendFrom, $siteName, $date, $fileName));
+        }else{
+            Mail::to($request->sendTo)->send(new sendReport($sendFrom, $siteName, $date, $fileName));
+        }
+        
+
+        //delete report file after sent email
+        File::delete($fileName);
+
+        return response()->json([
+            'message' => 'Email was sent'
+        ]);
     }
 
 }

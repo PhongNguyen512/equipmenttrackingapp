@@ -76,6 +76,10 @@ Route::group(['middleware' => ['cors', 'auth:api' ] ], function(){
     //update for each item in report
     Route::post('/updateReport', 'ApiReportController@updateReport')->middleware(['scope:coordinator,admin']);
 
+    ///////////////////////////////////////////////////////////////////// 
+    //eta.test/api/sendReport/3
+    Route::post('/sendReport/{site}','ApiReportController@sendReport')->middleware(['scope:coordinator,admin']);
+
 });
 
 //////////////////////////////////////
