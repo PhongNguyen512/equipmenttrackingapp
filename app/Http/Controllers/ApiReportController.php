@@ -349,10 +349,16 @@ class ApiReportController extends Controller
         if( !isset($request->sendTo) ){
             Mail::to($sendFrom)->send(new sendReport($sendFrom, $siteName, $date, $fileName));
         }else{
-            Mail::to($request->sendTo)->send(new sendReport($sendFrom, $siteName, $date, $fileName));
+
+            //For now, when mail with cc & bcc, mailtrap got 2 email at same time????
+            if( isset($request->cc) && isset($request->bcc) )
+                Mail::to($request->sendTo)->cc($request->cc)->bcc($request->bcc)->send(new sendReport($sendFrom, $siteName, $date, $fileName));
+            elseif( isset($request->cc) )
+                Mail::to($request->sendTo)->cc($request->cc)->send(new sendReport($sendFrom, $siteName, $date, $fileName));
+            else
+                Mail::to($request->sendTo)->send(new sendReport($sendFrom, $siteName, $date, $fileName));
         }
         
-
         //delete report file after sent email
         File::delete($fileName);
 

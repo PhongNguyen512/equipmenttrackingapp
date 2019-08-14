@@ -123,6 +123,9 @@ class ApiPostController extends Controller
         ]);
     }
 
+    ////////////
+    // require => site_name
+    ///////////
     public function updateSite(Request $request, Site $site){
         //if POST data is nothing
         if( count($request->all()) == 0 ){
@@ -187,7 +190,7 @@ class ApiPostController extends Controller
     }
 
     public function updateEquip(Request $request, Equipment $equip){  
-
+        
         $data = json_decode($request->getContent(), true);
 
         //if POST data is nothing
@@ -197,6 +200,7 @@ class ApiPostController extends Controller
             ])->setStatusCode(400);
         }
 
+        //convert to object to access data easier
         $data = (object)$data;
 
         $validator = Validator::make((array)$data, [
@@ -204,10 +208,13 @@ class ApiPostController extends Controller
             'ltd_smu' => ['numeric'],
         ]);
 
-        if($data->ltd_smu < $equip->ltd_smu){
-            return response()->json([
-                'error' => "SMU is invalid. Please contact coordinator or admin.",
-            ])->setStatusCode(400);
+        //not allow to let forement change smu, except admin, coordinator
+        if($request->user()->user_role_id === 3){
+            if($data->ltd_smu < $equip->ltd_smu){
+                return response()->json([
+                    'error' => "SMU is invalid. Please contact coordinator or admin.",
+                ])->setStatusCode(400);
+            }
         }
 
         if($validator->fails()){
@@ -216,25 +223,29 @@ class ApiPostController extends Controller
             ])->setStatusCode(400);
         }
 
+        //original data of equipment before updating
         $oldData = Equipment::find($equip->id);
 
         $equip->unit = isset($data->unit) ? $data->unit : $equip->unit;
         $equip->description = isset($data->description) ? $data->description : $equip->description;
 
         if($data->ltd_smu !== $equip->ltd_smu){
-            $equip->last_entry_ltd_smu =$equip->ltd_smu;
+            $equip->last_entry_ltd_smu = $equip->ltd_smu;
         }
 
         $equip->ltd_smu = isset($data->ltd_smu) ? $data->ltd_smu : $equip->ltd_smu;
         $equip->owning_status = isset($data->owning_status) ? $data->owning_status : $equip->owning_status;
 
+        //the value of equipment_status receive is true | false
+        //because of the front-end guy
+        //equipment_status in DB must be AV | DM
         $equip->equipment_status = isset($data->equipment_status) ? 
                                     $data->equipment_status === true ? 'AV' : 'DM'
                                     : $equip->equipment_status;
 
-        // $equip->mechanical_status = $data->mechanical_status !== null ? $data->mechanical_status : $equip->mechanical_status;
         $equip->mechanical_status = isset($data->mechanical_status) ? $data->mechanical_status : $equip->mechanical_status;
 
+        //Must have this for doing log later
         $equip->updated_at = now();
 
         //if lat or lng is empty return error
@@ -267,6 +278,7 @@ class ApiPostController extends Controller
             $this->sendNotification($user, $equip);
         }
   
+        //system will log the equipment when status change av <-> dm
         if($oldData->equipment_status !== $equip->equipment_status)
             $this->logUpdateEquip($equip, $request->header('Authorization'), $data );
 
@@ -292,42 +304,6 @@ class ApiPostController extends Controller
         ]);
     }
 
-    public function deleteSite(Site $site){
-        if( count($site->EquipmentClassList) > 0 ){
-            return response()->json([
-                'error' => 'You can\'t delete at this moment. ',
-            ], 400);
-        }
-
-        $site->delete();
-
-        return response()->json([
-            'success' => 'A Site has been deleted',
-        ]);
-    }
-
-    public function deleteEquipmentClass(EquipmentClass $equipClass){
-        if( count($equipClass->EquipmentList) > 0 ){
-            return response()->json([
-                'error' => 'You can\'t delete at this moment. ',
-            ], 400);
-        }
-
-        $equipClass->delete();
-
-        return response()->json([
-            'success' => 'An Equipment Class has been deleted',
-        ]);
-    }
-
-    public function deleteEquip(Equipment $equip){
-        $equip->delete();
-
-        return response()->json([
-            'success' => 'An Equipment has been deleted',
-        ]);
-    }
-
     public function logUpdateEquip($equip, $token, $data){
 
         switch($equip->equipment_status){
@@ -350,6 +326,7 @@ class ApiPostController extends Controller
         else
             $shift = "Night";
 
+        //check if equipment is DM at ~7-8 => start shift will be DM
         if( $equip->updated_at->format('H') >= 7 && $equip->updated_at->format('H') <= 8 )
             $startStatus = "DM";
         else
@@ -408,7 +385,7 @@ class ApiPostController extends Controller
             }
             
         }catch(Exception $e){
-        
+            //Not sure try catch work???
         }
     }
 
@@ -519,6 +496,8 @@ class ApiPostController extends Controller
                 ->setDevicesToken($appToken->app_token)
                 ->send();
         }else if( isset($appToken->pwa_token) ){
+            //Not using the pwa_token
+            //just for testing, not for the actual app
             $push->setMessage([
                 'notification' => [
                     'title' => 'Equipment Update Detected',
@@ -611,6 +590,7 @@ class ApiPostController extends Controller
                 if($time->up_at === null)
                     continue;
 
+                //check the current input timeframe with existed timeframe in DB
                 if( $up_at > Carbon::parse($time->down_at)->format('H:i:s') && $up_at < Carbon::parse($time->up_at)->format('H:i:s') ||
                     $down_at > Carbon::parse($time->down_at)->format('H:i:s') && $down_at < Carbon::parse($time->up_at)->format('H:i:s') ||
                     Carbon::parse($time->down_at)->format('H:i:s') > $down_at && Carbon::parse($time->down_at)->format('H:i:s') < $up_at &&
@@ -622,6 +602,8 @@ class ApiPostController extends Controller
             }    
         }     
         
+        //if the log entry is already DM and change to AV
+        //its will have up_at time => calculate park time
         if($up_at !== null){
             //get the difference in minutes
             $time_diff = date_diff( date_create( $down_at), date_create( $up_at) );
@@ -668,16 +650,43 @@ class ApiPostController extends Controller
         ]);
     }
 
-    public function test(){
-        // $test = Carbon::now();
-        // $test2 = Carbon::now()->sub(2, 'day'); 
+    public function deleteSite(Site $site){
+        if( count($site->EquipmentClassList) > 0 ){
+            return response()->json([
+                'error' => 'You can\'t delete at this moment. ',
+            ], 400);
+        }
 
-        // $randNum = rand(7, 15);
-        // $downAt = date("H:i", strtotime($randNum.":00"));
+        $site->delete();
 
-        $carbon = Carbon::parse("25 Jul");
+        return response()->json([
+            'success' => 'A Site has been deleted',
+        ]);
+    }
 
+    public function deleteEquipmentClass(EquipmentClass $equipClass){
+        if( count($equipClass->EquipmentList) > 0 ){
+            return response()->json([
+                'error' => 'You can\'t delete at this moment. ',
+            ], 400);
+        }
 
-        dd($carbon);
+        $equipClass->delete();
+
+        return response()->json([
+            'success' => 'An Equipment Class has been deleted',
+        ]);
+    }
+
+    public function deleteEquip(Equipment $equip){
+        $equip->delete();
+
+        return response()->json([
+            'success' => 'An Equipment has been deleted',
+        ]);
+    }
+
+    public function test(Request $request){
+        dd( "hwllo", $request->user()->user_role_id );
     }
 }
