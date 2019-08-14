@@ -25,15 +25,18 @@ class ApiReportController extends Controller
     ////////
     public function getReport(Site $site){
 
+        //check if report data exist in cache
         if(Cache::has('cacheReport')){
             $object = Cache::get('cacheReport');
     
+            //check if request of different report
             if($object->id !== $site->id )
                 $object = $this->cacheReportData($site);
             else
                 $object->time = now()->format('H:i');
         }
         else{
+            //generate report and save to cache
             $object = $this->cacheReportData($site);
         }
 
@@ -75,6 +78,8 @@ class ApiReportController extends Controller
             $object->unit = $d->unit;
             $object->equipment_status = $d->equipment_status;
 
+            //find the latest log entry of the current equipment
+            //to get all of updating stuff
             $logEntry = DB::table('equip_update_logs')
                         ->where('unit', '=', $d->unit)
                         ->latest()
@@ -102,6 +107,7 @@ class ApiReportController extends Controller
 
     public function updateReport(Request $request){ 
         
+        //get the latest log entry incase there are multiple log entry for 1 equipment
         $logEntryID = DB::table('equip_update_logs')
                 ->select('id')
                 ->where('unit', '=', $request->unit)
@@ -112,8 +118,11 @@ class ApiReportController extends Controller
                 ->where('unit', '=', $request->unit)
                 ->first();
 
+        //get the input data (request) update the cache of report
         $this->updateReportCache($request, $equipment);
 
+        //After update cache report data
+        //system update directly to multiple table in DB
         if( isset($request->est_date_of_repair) && $request->est_date_of_repair !== null ){
             if($equipment->equipment_status === 'DM')
                 DB::table('equip_update_logs')
@@ -159,8 +168,18 @@ class ApiReportController extends Controller
         $equipmentListArray = array_column($convertedArray, 'equipment_list');
         $size = sizeof($equipmentListArray);
 
+        //after convert cache data to array
+        //need to find index of equipment we need to change
+        //the equipment we looking for is deep down inside 1 array
+        //that array inside another array
         for($i = 0 ; $i < $size ; $i++){
+            //if we found an index of deep down equipment
+            //it will return index
+            //return false if nothing false
             $indexD2 = array_search($request->unit, array_column( $equipmentListArray[$i] , 'unit') );
+
+            //after found deep down index of equipment
+            //we got index of equipment_class contains it by for loop
             if($indexD2){
                 $indexD1 = $i;
                 break;
@@ -184,21 +203,23 @@ class ApiReportController extends Controller
 
     public function generateReportFile($site){
 
-        $object = new \stdClass();
-        $object->id = $site->id;
-        $object->site_name = $site->site_name;
-        $object->date = now()->format('M d, Y');
-        $object->time = now()->format('H:i');
-        $object->equipment_class_list = $this->getEquipClass($site->EquipmentClassList()->get()); 
+        // $object = new \stdClass();
+        // $object->id = $site->id;
+        // $object->site_name = $site->site_name;
+        // $object->date = now()->format('M d, Y');
+        // $object->time = now()->format('H:i');
+        // $object->equipment_class_list = $this->getEquipClass($site->EquipmentClassList()->get()); 
 
-        // if(Cache::has('cacheReport')){
-            // $object = json_decode(json_encode(Cache::get('cacheReport')), true);
+        if(Cache::has('cacheReport')){
+            $object = json_decode(json_encode(Cache::get('cacheReport')), true);
             $object = json_decode(json_encode($object), true);
             $reportData = [];
             
             $spreadsheet = new Spreadsheet();
+            //just set active 1 time, dont need to rewrite again
             $sheet = $spreadsheet->getActiveSheet();
 
+            //fix data for heading
             $headingTitle = ['Unit Number', 'Equipment Status', 'Est Date of Repair', 'Note', 'Additional Detail'];
        
             foreach( $object['equipment_class_list'] as $equipment_class ){
@@ -277,7 +298,7 @@ class ApiReportController extends Controller
             //Data
             $sheet->setCellValue('C1', $object['site_name'].' Equipment');
             $sheet->setCellValue('B2', $object['date']);
-            $sheet->setCellValue('D2', $object['time']);
+            $sheet->setCellValue('D2', now()->format('H:i'));
             $sheet->fromArray($headingTitle, Null, 'B4');
 
             $sheet->getStyle('B4:F4')->applyFromArray($styleHeading);
@@ -318,19 +339,21 @@ class ApiReportController extends Controller
                 Cache::put('cacheAdditionalReportMail', $arrayAdditionalReportMail, 600);
             }
 
-        // }
-        // else{
-        //     return response()->json([
-        //         'error' => 'Report not found. Please generate report first.'
-        //     ])->setStatusCode(400);
-        // }
+        }
+        else{
+            return response()->json([
+                'error' => 'Report not found. Please generate report first.'
+            ])->setStatusCode(400);
+        }
     
     }
 
     public function sendReport(Site $site, Request $request){
 
+        //generate excel file and save in local before sent via email
         $this->generateReportFile($site);
         
+        //cache data about additional when sending email
         if(Cache::has('cacheAdditionalReportMail')){
             $data = Cache::get('cacheAdditionalReportMail')[0];
             $siteName = $data[0];
@@ -347,9 +370,10 @@ class ApiReportController extends Controller
         $sendFrom = $request->user()->email;
 
         if( !isset($request->sendTo) ){
+            //send email to yourself
             Mail::to($sendFrom)->send(new sendReport($sendFrom, $siteName, $date, $fileName));
         }else{
-
+            //send email for single or multiple email
             //For now, when mail with cc & bcc, mailtrap got 2 email at same time????
             if( isset($request->cc) && isset($request->bcc) )
                 Mail::to($request->sendTo)->cc($request->cc)->bcc($request->bcc)->send(new sendReport($sendFrom, $siteName, $date, $fileName));
