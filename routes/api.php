@@ -112,3 +112,13 @@ Route::group([ 'prefix' => 'auth', 'middleware' => 'cors' ], function () {
     });
 });
 
+//////////////////////////////////////
+// Reset Password
+Route::group([ 'prefix' => 'password', 'middleware' => 'cors' ], function () {
+    //eta.test/api/password/requestResetPassword
+    Route::post('requestResetPassword', 'ResetPasswordController@requestResetPassword')->name('requestResetPassword');
+
+    //eta.test/api/password/refreshToken
+    // Route::post('refreshToken', 'AuthController@refreshToken');
+
+});
