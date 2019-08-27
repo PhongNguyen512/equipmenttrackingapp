@@ -16,7 +16,7 @@ class CreatePasswordResetsTable extends Migration
         Schema::create('password_resets', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->string('email')->index();
-            $table->integer('otp');
+            $table->integer('otp')->unique();
             $table->timestamps();
         });
     }
