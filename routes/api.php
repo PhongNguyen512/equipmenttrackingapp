@@ -80,9 +80,6 @@ Route::group(['middleware' => ['cors', 'auth:api' ] ], function(){
     //eta.test/api/sendReport/3
     Route::post('/sendReport/{site}','ApiReportController@sendReport')->middleware(['scope:coordinator,admin']);
 
-
-
-
     // eta.test/api/test
     Route::get('test', 'ApiPostController@test');
 
@@ -116,9 +113,7 @@ Route::group([ 'prefix' => 'auth', 'middleware' => 'cors' ], function () {
 // Reset Password
 Route::group([ 'prefix' => 'password', 'middleware' => 'cors' ], function () {
     //eta.test/api/password/requestResetPassword
-    Route::post('requestResetPassword', 'ResetPasswordController@requestResetPassword')->name('requestResetPassword');
+    Route::post('requestResetPassword', 'ResetPasswordController@requestResetPassword')->name('password.request');
 
-    //eta.test/api/password/refreshToken
-    // Route::post('refreshToken', 'AuthController@refreshToken');
 
 });

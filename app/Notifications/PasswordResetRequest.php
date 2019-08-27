@@ -16,9 +16,9 @@ class PasswordResetRequest extends Notification
      *
      * @return void
      */
-    public function __construct($token)
+    public function __construct($otp)
     {
-        $this->token = $token;
+        $this->otp = $otp;
     }
 
     /**
@@ -40,11 +40,9 @@ class PasswordResetRequest extends Notification
      */
     public function toMail($notifiable)
     {
-        $url = url('/api/password/reset/'.$this->token);
-
         return (new MailMessage)
-                    ->line('This is an url for reset your password')
-                    ->action('Reset Password', url($url))
+                    ->line('This is an OTP code for reset your password. Please enter this code in your app to process reset password.')
+                    ->line($this->otp)
                     ->line('Thank you for using our application!');
     }
 
